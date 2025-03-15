@@ -178,3 +178,61 @@ Se espera que se redacte una sección del README en donde se indique cómo ejecu
 Se proveen [pruebas automáticas](https://github.com/7574-sistemas-distribuidos/tp0-tests) de caja negra. Se exige que la resolución de los ejercicios pase tales pruebas, o en su defecto que las discrepancias sean justificadas y discutidas con los docentes antes del día de la entrega. El incumplimiento de las pruebas es condición de desaprobación, pero su cumplimiento no es suficiente para la aprobación. Respetar las entradas de log planteadas en los ejercicios, pues son las que se chequean en cada uno de los tests.
 
 La corrección personal tendrá en cuenta la calidad del código entregado y casos de error posibles, se manifiesten o no durante la ejecución del trabajo práctico. Se pide a los alumnos leer atentamente y **tener en cuenta** los criterios de corrección informados  [en el campus](https://campusgrado.fi.uba.ar/mod/page/view.php?id=73393).
+
+## Informe
+
+### Ejercicio 1
+
+Ejecutar:
+```bash
+./generar-compose.sh <archivo_salida> <cantidad_clientes>
+```
+
+En caso de falta de permisos:
+```bash
+chmod +x generar-compose.sh
+```
+
+El script de bash invoca el subscript de python `generate_compose.py`.
+
+Casos de interés:
+
+- Caso de error: faltan el nombre del archivo de salida.
+    ```bash
+    ./generar-compose.sh 2
+    ```
+    Salida esperada: 
+    ```El script de bash debe ejecutarse de la siguiente manera: ./generar-compose.sh <archivo_salida> <cantidad_clientes>```
+
+- Caso de error: faltan la cantidad de parámetros.
+    ```bash
+    ./generar-compose.sh docker-compose.yaml
+    ```
+    Salida esperada: 
+    ```El script de bash debe ejecutarse de la siguiente manera: ./generar-compose.sh <archivo_salida> <cantidad_clientes>```
+
+- Caso de error: faltan ambos parámetros.
+    ```bash
+    ./generar-compose.sh
+    ```
+    Salida esperada: 
+    ```El script de bash debe ejecutarse de la siguiente manera: ./generar-compose.sh <archivo_salida> <cantidad_clientes>```
+    
+- Caso de error: la cantidad de clientes no es un número entero no negativo. 
+    ```bash
+    ./generar-compose.sh docker-compose.yaml sd
+    ```
+    Salida esperada: 
+    ```Error: La cantidad de clientes debe ser un número entero no negativo.```
+
+- Caso de éxito:
+    ```bash
+    ./generar-compose.sh docker-compose-example.yaml 3
+    ```
+
+    Salida esperada:
+    ``` Nombre del archivo de salida: docker-compose-example.yaml
+        Cantidad de clientes: 3
+        Archivo compose.yaml generado correctamente
+    ```
+

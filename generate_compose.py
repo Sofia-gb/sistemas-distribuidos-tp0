@@ -1,0 +1,109 @@
+import sys
+from enum import Enum
+import yaml
+
+
+class ComposeGeneratorError(Enum):
+    ARGUMENT_COUNT_ERROR = (
+        "El script de python debe ejecutarse de la siguiente manera: "
+        "python3 generate_compose.py <archivo_salida> <cantidad_clientes>."
+    )
+    NUMBER_OF_CLIENTS_ERROR = (
+        "Error: La cantidad de clientes debe ser un número entero no negativo."
+    )
+
+
+def exit_with_error(error):
+    sys.stderr.write(error.value + "\n")
+    sys.exit(1)
+
+
+def get_arguments():
+    EXPECTED_PARAMS = 3  # generate_compose.py <archivo_salida> <n_clientes>
+
+    if len(sys.argv) != EXPECTED_PARAMS:
+        exit_with_error(ComposeGeneratorError.ARGUMENT_COUNT_ERROR)
+
+    number_of_clients = sys.argv[2]
+    output_file = sys.argv[1]
+
+    if not number_of_clients.isdigit() or int(number_of_clients) < 0:
+        # TODO:float
+        exit_with_error(ComposeGeneratorError.NUMBER_OF_CLIENTS_ERROR)
+
+    return parse_arguments(output_file, number_of_clients)
+
+
+def parse_arguments(output_file, number_of_clients):
+    if not (output_file.endswith('.yaml') or output_file.endswith('.yml')):
+        output_file += '.yaml'
+
+    return output_file, int(number_of_clients)
+
+
+def config_clients(compose, number_of_clients):
+
+    for i in range(1, number_of_clients + 1):
+        compose["services"][f"client{i}"] = {
+            "container_name": f"client{i}",
+            "image": "client:latest",
+            "depends_on": ["server"],
+            "environment": {
+                "SERVER_HOST": "server",
+                "CLIENT_ID": str(i),
+                "CLIENT_LOG_LEVEL": "DEBUG"
+            },
+            "networks": ["testing_net"],
+            "entrypoint": "/client"
+        }
+
+
+def config_networks(compose):
+    compose["networks"] = {
+        "testing_net": {
+            "ipam": {
+                "driver": "default",
+                "config": [
+                    {
+                        "subnet": "172.25.125.0/24",
+                    }
+                ]
+            }
+        }
+    }
+
+
+def config_server(compose):
+    compose["services"]["server"] = {
+            "container_name": "server",
+            "image": "server:latest",
+            "entrypoint": "python3 /main.py",
+            "environment": {
+                "PYTHONUNBUFFERED": "1",
+                "LOGGING_LEVEL": "DEBUG"
+            },
+            "networks": ["testing_net"]
+        }
+
+
+def config_services(compose, number_of_clients):
+    compose["services"] = {}
+    config_server(compose)
+    config_clients(compose, number_of_clients)
+
+
+def generate_compose(output_file, number_of_clients):
+
+    compose = {"name": "tp0"}
+    config_services(compose, number_of_clients)
+    config_networks(compose)
+
+    with open(output_file, "w") as f:
+        yaml.dump(compose, f, default_flow_style=False)
+
+    sys.stdout.write(f"Archivo {output_file} generado correctamente." + "\n")
+
+
+if __name__ == "__main__":
+    output_file, number_of_clients = get_arguments()
+    generate_compose(output_file, number_of_clients)
