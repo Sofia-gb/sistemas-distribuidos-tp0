@@ -231,8 +231,66 @@ Casos de interés:
     ```
 
     Salida esperada:
-    ``` Nombre del archivo de salida: docker-compose-example.yaml
+    ``` bash
+        Nombre del archivo de salida: docker-compose-example.yaml
         Cantidad de clientes: 3
         Archivo compose.yaml generado correctamente
     ```
 
+    Definición de Docker Compose:
+
+    ```yaml
+    name: tp0
+    networks:
+        testing_net:
+            ipam:
+            config:
+            - subnet: 172.25.125.0/24
+            driver: default
+    services:
+        client1:
+            container_name: client1
+            depends_on:
+            - server
+            entrypoint: /client
+            environment:
+                CLIENT_ID: '1'
+                CLIENT_LOG_LEVEL: DEBUG
+                SERVER_HOST: server
+            image: client:latest
+            networks:
+            - testing_net
+        client2:
+            container_name: client2
+            depends_on:
+            - server
+            entrypoint: /client
+            environment:
+                CLIENT_ID: '2'
+                CLIENT_LOG_LEVEL: DEBUG
+                SERVER_HOST: server
+            image: client:latest
+            networks:
+            - testing_net
+        client3:
+            container_name: client3
+            depends_on:
+            - server
+            entrypoint: /client
+            environment:
+                CLIENT_ID: '3'
+                CLIENT_LOG_LEVEL: DEBUG
+                SERVER_HOST: server
+            image: client:latest
+            networks:
+            - testing_net
+        server:
+            container_name: server
+            entrypoint: python3 /main.py
+            environment:
+                LOGGING_LEVEL: DEBUG
+                PYTHONUNBUFFERED: '1'
+            image: server:latest
+            networks:
+            - testing_net
+    ```yaml
