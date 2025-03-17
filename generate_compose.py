@@ -33,7 +33,6 @@ def get_arguments():
     output_file = sys.argv[1]
 
     if not number_of_clients.isdigit() or int(number_of_clients) < 0:
-        # TODO:float
         exit_with_error(ComposeGeneratorError.NUMBER_OF_CLIENTS_ERROR)
 
     return parse_arguments(output_file, number_of_clients)
