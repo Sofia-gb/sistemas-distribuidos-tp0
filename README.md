@@ -102,7 +102,7 @@ Crear un script de bash `validar-echo-server.sh` que permita verificar el correc
 
 En caso de que la validación sea exitosa imprimir: `action: test_echo_server | result: success`, de lo contrario imprimir:`action: test_echo_server | result: fail`.
 
-El script deberá ubicarse en la raíz del proyecto. Netcat no debe ser instalado en la máquina _host_ y no se pueden exponer puertos del servidor para realizar la comunicación (hint: `docker network`). `
+El script deberá ubicarse en la raíz del proyecto. Netcat no debe ser instalado en la máquina _host_ y no se pueden exponer puertos del servidor para realizar la comunicación (hint: `docker network`). 
 
 
 ### Ejercicio N°4:
@@ -330,3 +330,29 @@ Elegí usar `bind mount` porque permite que los archivos de configuración pueda
     docker compose -f docker-compose-dev.yaml up -d
     docker logs client3
     ```
+
+### Ejercicio 3
+
+**No exponer puertos del servidor:**
+
+`SERVER_PORT=$(grep '^SERVER_PORT' ./server/config.ini | cut -d '=' -f2 | tr -d '[:space:]')`
+
+- `grep '^SERVER_PORT' ./server/config.ini` busca la línea que contiene el parámetro SERVER_PORT en el archivo de configuración.
+- `cut -d '=' -f2` extrae el valor del puerto, que se encuentra después del signo igual (=).
+- `tr -d '[:space:]'`elimina espacios alrededor del número de puerto extraído.
+
+**Obtener IP del servidor:** se usa `docker inspect` para extraerla.
+
+`SERVER_IP=$(docker inspect --format '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$SERVER_CONTAINER")`
+
+**Enviar mensaje al servidor y recibir respuesta:**
+
+`RESPONSE=$(docker run --network container:$SERVER_CONTAINER busybox sh -c "echo $MESSAGE | nc -w 2 $SERVER_IP $SERVER_PORT")`
+
+- `docker run`: Crea y ejecuta un nuevo contenedor.
+- `--rm`: Elimina el contenedor automáticamente una vez que el comando finaliza.
+- `--network container:$SERVER_CONTAINER` hace que el contenedor busybox utilice la misma red que el contenedor del servidor. Esto permite la comunicación sin necesidad de exponer puertos.
+- `busybox` usa una imagen mínima de Docker que tiene herramientas como netcat.
+- `sh` invoca la shell.
+- `-c` le pasa a la shell el comando que está entre comillas para que lo ejecute.
+- `-w 2` define un tiempo de espera de 2 segundos.
