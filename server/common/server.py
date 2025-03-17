@@ -8,6 +8,7 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
+        self._clients_sockets = []
 
     def run(self):
         """
@@ -22,7 +23,24 @@ class Server:
         # the server
         while True:
             client_sock = self.__accept_new_connection()
+            self._clients_sockets.append(client_sock)
             self.__handle_client_connection(client_sock)
+
+    def close(self):
+        """
+        Close server socket and all client sockets
+        """
+
+        try:
+            self._server_socket.close()
+        except OSError:
+            logging.info("Server socket already closed")
+
+        for client_sock in self._clients_sockets:
+            try:
+                client_sock.close()
+            except OSError:
+                logging.info("Client socket already closed")
 
     def __handle_client_connection(self, client_sock):
         """

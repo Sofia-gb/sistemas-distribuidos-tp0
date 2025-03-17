@@ -4,6 +4,8 @@ from configparser import ConfigParser
 from common.server import Server
 import logging
 import os
+import signal
+import sys
 
 
 def initialize_config():
@@ -34,6 +36,15 @@ def initialize_config():
 
     return config_params
 
+def graceful_shutdown(signal, frame):
+    """Handle SIGTERM gracefully"""
+    logging.info("Received SIGTERM. Shutting down server gracefully...")
+
+    server.close()
+
+    logging.info("Server shut down gracefully.")
+    sys.exit(0)
+
 
 def main():
     config_params = initialize_config()
@@ -49,7 +60,10 @@ def main():
                   f"listen_backlog: {listen_backlog} | logging_level: {logging_level}")
 
     # Initialize server and start server loop
+    global server
     server = Server(port, listen_backlog)
+
+    signal.signal(signal.SIGTERM, graceful_shutdown)
     server.run()
 
 def initialize_log(logging_level):
