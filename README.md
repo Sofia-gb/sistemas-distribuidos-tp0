@@ -308,3 +308,25 @@ Para lograr evitar reconstruir las imágenes de Docker al hacer cambios en los a
 Por otro lado, agregué al docker-compose la variable de entorno `CONFIG_FILE` (tanto en los clientes como en el servidor), lo que permite definir la ubicación del archivo de configuración de la aplicación dada dentro del contenedor. 
 
 Elegí usar `bind mount` porque permite que los archivos de configuración puedan editarse desde el host y que los cambios se reflejen de manera inmediata dentro del contenedor.
+
+**Ejemplo**:
+
+1) 
+
+    ```bash
+    ./generar-compose.sh docker-compose-dev.yaml 3
+    docker build -f ./server/Dockerfile -t server:latest .
+    docker build -f ./client/Dockerfile -t client:latest .
+    docker compose -f docker-compose-dev.yaml up -d
+    docker logs client3
+    docker compose -f docker-compose-dev.yaml stop
+    docker compose -f docker-compose-dev.yaml down
+    ```
+
+2) Cambiar alguna configuración en `client/config.yaml`. Por ejemplo: `level: "DEBUG"`.
+
+3) Visualizar el cambio realizado en los logs:
+    ```bash
+    docker compose -f docker-compose-dev.yaml up -d
+    docker logs client3
+    ```
