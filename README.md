@@ -333,7 +333,14 @@ Elegí usar `bind mount` porque permite que los archivos de configuración pueda
 
 ### Ejercicio 3
 
-**No exponer puertos del servidor:**
+#### Ejecución
+
+- Enviar mensaje default: `./validar-echo-server.sh`
+- Enviar mensaje personalizado: `./validar-echo-server.sh <mensaje>`
+
+#### Explicación
+
+**Obtener puerto:**
 
 `SERVER_PORT=$(grep '^SERVER_PORT' ./server/config.ini | cut -d '=' -f2 | tr -d '[:space:]')`
 
@@ -349,8 +356,8 @@ Elegí usar `bind mount` porque permite que los archivos de configuración pueda
 
 `RESPONSE=$(docker run --network container:$SERVER_CONTAINER busybox sh -c "echo $MESSAGE | nc -w 2 $SERVER_IP $SERVER_PORT")`
 
-- `docker run`: Crea y ejecuta un nuevo contenedor.
-- `--rm`: Elimina el contenedor automáticamente una vez que el comando finaliza.
+- `docker run` crea y ejecuta un nuevo contenedor.
+- `--rm` elimina el contenedor automáticamente una vez que el comando finaliza.
 - `--network container:$SERVER_CONTAINER` hace que el contenedor busybox utilice la misma red que el contenedor del servidor. Esto permite la comunicación sin necesidad de exponer puertos.
 - `busybox` usa una imagen mínima de Docker que tiene herramientas como netcat.
 - `sh` invoca la shell.
