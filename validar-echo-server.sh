@@ -25,7 +25,7 @@ fi
 
 RESPONSE=$(docker run --rm --network container:$SERVER_CONTAINER busybox sh -c "echo $MESSAGE | nc -w 2 $SERVER_IP $SERVER_PORT")
 
-if [ "$RESPONSE" == "$EXPECTED_RESPONSE" ]; then
+if [ "$RESPONSE" = "$EXPECTED_RESPONSE" ]; then
     echo $SUCCESS_MESSAGE
     exit $SUCCESS_CODE
 else
