@@ -300,3 +300,11 @@ Casos de interés:
             networks:
             - testing_net
     ```yaml
+
+### Ejercicio 2
+
+Para lograr evitar reconstruir las imágenes de Docker al hacer cambios en los archivos de configuración, `config.ini` y `config.yaml`, modifiqué la definición de Docker Compose para utilizar volúmenes. Mediante estos, se montan los archivos de configuración en los contenedores, permitiendo que los cambios en los mismos persistan sin reconstruir las imágenes.
+
+Por otro lado, agregué al docker-compose la variable de entorno `CONFIG_FILE` (tanto en los clientes como en el servidor), lo que permite definir la ubicación del archivo de configuración de la aplicación dada dentro del contenedor. 
+
+Elegí usar `bind mount` porque permite que los archivos de configuración puedan editarse desde el host y que los cambios se reflejen de manera inmediata dentro del contenedor.
