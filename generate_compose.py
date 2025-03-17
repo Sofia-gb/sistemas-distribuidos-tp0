@@ -58,14 +58,23 @@ def config_clients(compose, number_of_clients):
         compose["services"][f"client{i}"] = {
             "container_name": f"client{i}",
             "image": "client:latest",
+            "build": "./client",
             "depends_on": ["server"],
             "environment": {
                 "SERVER_HOST": "server",
                 "CLIENT_ID": str(i),
-                "CLIENT_LOG_LEVEL": "DEBUG"
+                "CLIENT_LOG_LEVEL": "DEBUG",
+                "CONFIG_FILE": "/config.yaml"
             },
             "networks": ["testing_net"],
-            "entrypoint": "/client"
+            "entrypoint": "/client",
+            "volumes": [
+                {
+                    "type": "bind",
+                    "source": "./client/config.yaml",
+                    "target": "/config.yaml"
+                }
+            ]
         }
 
 
@@ -92,12 +101,22 @@ def config_server(compose):
     compose["services"]["server"] = {
             "container_name": "server",
             "image": "server:latest",
+            "build": "./server",
             "entrypoint": "python3 /main.py",
             "environment": {
                 "PYTHONUNBUFFERED": "1",
-                "LOGGING_LEVEL": "DEBUG"
+                "LOGGING_LEVEL": "DEBUG",
+                "CONFIG_FILE": "/config.ini"
+
             },
-            "networks": ["testing_net"]
+            "networks": ["testing_net"],
+            "volumes": [
+                {
+                    "type": "bind",
+                    "source": "./server/config.ini",
+                    "target": "/config.ini"
+                }
+            ]
         }
 
 
