@@ -104,7 +104,7 @@ def config_server(compose):
             "entrypoint": "python3 /main.py",
             "environment": {
                 "PYTHONUNBUFFERED": "1",
-                "LOGGING_LEVEL": "DEBUG",
+                "SERVER_LOG_LEVEL": "DEBUG",
                 "CONFIG_FILE": "/config.ini"
 
             },
