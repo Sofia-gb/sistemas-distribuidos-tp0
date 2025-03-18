@@ -38,14 +38,15 @@ class Server:
         for client_sock in self._clients_sockets:
             try:
                 client_sock.send(shutdown_message)
-                logging.info(f"action: send_shutdown_message | result: success | ip: {client_sock.getpeername()[0]}")
-                logging.info(f"action: disconnect_client | result: in_progress | ip: {client_sock.getpeername()[0]}")
+                addr = client_sock.getpeername()
+                logging.info(f"action: send_shutdown_message | result: success | ip: {addr[0]}")
+                logging.info(f"action: disconnect_client | result: in_progress | ip: {addr[0]}")
 
                 client_sock.close()
-                logging.info(f"action: disconnect_client | result: success | ip: {client_sock.getpeername()[0]}")
+                logging.info(f"action: disconnect_client | result: success | ip: {addr[0]}")
 
             except OSError as e:
-                logging.error(f"action: disconnect_client | result: fail | ip: {client_sock.getpeername()[0]} | error: {e.strerror}")
+                logging.error(f"action: disconnect_client | result: fail | error: {e.strerror}")
 
         try:
             logging.info(f"action: close_server_socket | result: in_progess")
