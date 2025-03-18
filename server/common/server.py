@@ -33,8 +33,8 @@ class Server:
         """
 
         logging.info("action: shutdown | result: in_progress")
-        shutdown_message = "SERVER_SHUTDOWN\n".encode("utf-8")
 
+        shutdown_message = "SERVER_SHUTDOWN\n".encode("utf-8")
         for client_sock in self._clients_sockets:
             try:
                 client_sock.send(shutdown_message)
@@ -42,11 +42,14 @@ class Server:
                 logging.info(f"action: send_shutdown_message | result: success | ip: {addr[0]}")
                 logging.info(f"action: disconnect_client | result: in_progress | ip: {addr[0]}")
 
+            except OSError as e:
+                logging.error(f"action: disconnect_client | result: fail | error: {e.strerror}")
+
+            finally:
                 client_sock.close()
                 logging.info(f"action: disconnect_client | result: success | ip: {addr[0]}")
 
-            except OSError as e:
-                logging.error(f"action: disconnect_client | result: fail | error: {e.strerror}")
+        self._clients_sockets = []
 
         try:
             logging.info(f"action: close_server_socket | result: in_progress")
@@ -88,6 +91,7 @@ class Server:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
             client_sock.close()
+            self._clients_sockets.remove(client_sock)
 
     def __accept_new_connection(self):
         """
