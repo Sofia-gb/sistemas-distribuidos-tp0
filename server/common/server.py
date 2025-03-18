@@ -49,7 +49,7 @@ class Server:
                 logging.error(f"action: disconnect_client | result: fail | error: {e.strerror}")
 
         try:
-            logging.info(f"action: close_server_socket | result: in_progess")
+            logging.info(f"action: close_server_socket | result: in_progress")
             self._server_socket.close()
             logging.info(f"action: close_server_socket | result: success")
 
