@@ -87,3 +87,18 @@ func (c *Client) StartClientLoop() {
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }
+
+// Close gracefully shuts down the client by closing the socket connection.
+func (c *Client) Close() {
+	if c.conn != nil {
+		err := c.conn.Close()
+		if err != nil {
+			log.Errorf("action: close_connection | result: fail | client_id: %v | error: %v",
+				c.config.ID,
+				err,
+			)
+		} else {
+			log.Infof("action: close_connection | result: success | client_id: %v", c.config.ID)
+		}
+	}
+}

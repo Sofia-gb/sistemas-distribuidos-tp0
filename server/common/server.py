@@ -33,14 +33,17 @@ class Server:
 
         try:
             self._server_socket.close()
-        except OSError:
-            logging.info("Server socket already closed")
+            logging.info(f"action: close_server_socket | result: success")
 
+        except OSError as e:
+            logging.error(f"action: close_server_socket | result: fail | error: {e.strerror}")
         for client_sock in self._clients_sockets:
             try:
                 client_sock.close()
-            except OSError:
-                logging.info("Client socket already closed")
+                logging.info(f"action: close_client_socket | result: success")
+
+            except OSError as e:
+                logging.error(f"action: close_client_socket | result: fail | error: {e.strerror}")
 
     def __handle_client_connection(self, client_sock):
         """

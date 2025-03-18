@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/op/go-logging"
@@ -115,5 +117,18 @@ func main() {
 	}
 
 	client := common.NewClient(clientConfig)
-	client.StartClientLoop()
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGTERM)
+
+	go func() {
+		client.StartClientLoop()
+	}()
+
+	<-sigs
+	log.Info("Received SIGTERM. Shutting down client gracefully...")
+
+	client.Close()
+
+	log.Info("Client shut down gracefully.")
 }
