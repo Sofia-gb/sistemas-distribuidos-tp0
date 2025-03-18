@@ -363,3 +363,30 @@ Elegí usar `bind mount` porque permite que los archivos de configuración pueda
 - `sh` invoca la shell.
 - `-c` le pasa a la shell el comando que está entre comillas para que lo ejecute.
 - `-w 2` define un tiempo de espera de 2 segundos.
+
+### Ejercicio 4
+
+#### Ejecución
+
+A continuación detallo un ejemplo en el cual se puede observar en los logs del servidor lo que ocurre cuando este recibe SIGTERM:
+
+```bash
+./generar-compose.sh docker-compose-dev.yaml 3
+docker build -f ./server/Dockerfile -t server:latest .
+docker build -f ./client/Dockerfile -t client:latest .
+docker compose -f docker-compose-dev.yaml up -d
+docker compose -f docker-compose-dev.yaml stop server
+docker logs server
+```
+
+También se puede utilizar el flag `-t int` para especificar los segundos que se esperará para que los contenedores se cierren gracefully: `docker compose -f docker-compose-dev.yaml stop -t 20`.
+
+#### Explicación
+
+Cuando el cliente recibe `SIGTERM`, se ejecuta `client.Close()` en una goroutine. Esto permite que el cliente realice el proceso de cierre antes de terminar. Durante el cierre, el cliente procede primero a avisarle al servidor que se está cerrado mediante el mensaje `CLIENT_SHUTDOWN`, para luego cerrar la conexión.
+
+Durante la ejecución del cliente, se crean sockets para cada mensaje enviado. Si el servidor responde con el mensaje `SERVER_SHUTDOWN`, el cliente también cierra su conexión.
+    
+Cuando el servidor recibe la signal `SIGTERM`, le avisa a los clientes conectados acerca del proceso de cierre enviándoles el mensaje `SERVER_SHUTDOWN`. Luego cierra todas las conexiones abiertas con los clientes. Por último, se cierra el socket del servidor.
+
+Si durante el manejo de una conexión el servidor recibe `CLIENT_SHUTDOWN`, cierra el socket asociado y lo elimina de la lista de conexiones abiertas.
