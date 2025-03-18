@@ -81,6 +81,11 @@ func (c *Client) StartClientLoop() {
 			msg,
 		)
 
+		if msg == "SERVER_SHUTDOWN\n" {
+			c.Close()
+			return
+		}
+
 		// Wait a time between sending one message and the next one
 		time.Sleep(c.config.LoopPeriod)
 
@@ -90,8 +95,15 @@ func (c *Client) StartClientLoop() {
 
 // Close gracefully shuts down the client by closing the socket connection.
 func (c *Client) Close() {
+	log.Infof("action: close_connection | result: in_progress | client_id: %v", c.config.ID)
 	if c.conn != nil {
-		err := c.conn.Close()
+		_, err := fmt.Fprintln(c.conn, "CLIENT_SHUTDOWN")
+		if err != nil {
+			log.Warningf("action: send_shutdown_message | result: fail | client_id: %v | error: %v", c.config.ID, err)
+		} else {
+			log.Infof("action: send_shutdown_message | result: success | client_id: %v", c.config.ID)
+		}
+		err = c.conn.Close()
 		if err != nil {
 			log.Errorf("action: close_connection | result: fail | client_id: %v | error: %v",
 				c.config.ID,

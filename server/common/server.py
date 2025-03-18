@@ -1,5 +1,6 @@
 import socket
 import logging
+import sys
 
 
 class Server:
@@ -31,19 +32,30 @@ class Server:
         Close server socket and all client sockets
         """
 
+        logging.info("action: shutdown | result: in_progress")
+        shutdown_message = "SERVER_SHUTDOWN\n".encode("utf-8")
+
+        for client_sock in self._clients_sockets:
+            try:
+                client_sock.send(shutdown_message)
+                logging.info(f"action: send_shutdown_message | result: success | ip: {client_sock.getpeername()[0]}")
+                logging.info(f"action: disconnect_client | result: in_progress | ip: {client_sock.getpeername()[0]}")
+
+                client_sock.close()
+                logging.info(f"action: disconnect_client | result: success | ip: {client_sock.getpeername()[0]}")
+
+            except OSError as e:
+                logging.error(f"action: disconnect_client | result: fail | ip: {client_sock.getpeername()[0]} | error: {e.strerror}")
+
         try:
+            logging.info(f"action: close_server_socket | result: in_progess")
             self._server_socket.close()
             logging.info(f"action: close_server_socket | result: success")
 
         except OSError as e:
             logging.error(f"action: close_server_socket | result: fail | error: {e.strerror}")
-        for client_sock in self._clients_sockets:
-            try:
-                client_sock.close()
-                logging.info(f"action: close_client_socket | result: success")
-
-            except OSError as e:
-                logging.error(f"action: close_client_socket | result: fail | error: {e.strerror}")
+  
+        logging.info("action: shutdown | result: success")
 
     def __handle_client_connection(self, client_sock):
         """
@@ -57,6 +69,18 @@ class Server:
             msg = client_sock.recv(1024).rstrip().decode('utf-8')
             addr = client_sock.getpeername()
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
+
+            if msg == "CLIENT_SHUTDOWN":
+                try:
+                    logging.info(f"action: disconnect_client | result: in_progress | ip: {addr[0]}")
+                    client_sock.close()
+                    logging.info(f"action: disconnect_client | result: success | ip: {addr[0]}")
+                    self._clients_sockets.remove(client_sock)
+                except OSError as e:
+                    logging.error(f"action: disconnect_client | result: fail | ip: {addr[0]} | error: {e.strerror}")
+                finally:
+                    return
+
             # TODO: Modify the send to avoid short-writes
             client_sock.send("{}\n".format(msg).encode('utf-8'))
         except OSError as e:
