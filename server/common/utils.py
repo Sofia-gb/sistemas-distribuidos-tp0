@@ -50,7 +50,7 @@ class Bet:
             else:
                 raise ValueError(f"Invalid Bet format: {data}")
 
-        return cls(agency, first_name, last_name, number, birth_date, dni)
+        return cls(agency, first_name, last_name, dni, birth_date, number)
 
 """ Checks whether a bet won the prize or not. """
 def has_won(bet: Bet) -> bool:
