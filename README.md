@@ -393,9 +393,18 @@ Si durante el manejo de una conexión el servidor recibe `CLIENT_SHUTDOWN`, cier
 
 ### Ejercicio 5
 
-Tanto en el cliente como en el servidor se utilizan las funciones de envío y recepción de mensajes definidas en `communicationProtocol.go` y `communication_protocol.py` para evitar los fenómenos _short read y short write_.
+Para ejecutar este ejercicio, pueden seguirse los siguientes pasos:
 
-Los datos de cada agencia (nombre, apellido, dni, fecha de nacimiento y número de la apuesta) son recibidos como variables de entorno del archivo de Docker Compose. En este se definen las 5 agencias con datos aleatorios. El identificador de la agencia es el id del cliente.
+```bash
+./generar-compose.sh docker-compose-dev.yaml <cantidad_agencias>
+docker build -f ./server/Dockerfile -t server:latest .
+docker build -f ./client/Dockerfile -t client:latest .
+docker compose -f docker-compose-dev.yaml up -d
+```
+
+Los datos de cada agencia (nombre, apellido, dni, fecha de nacimiento y número de la apuesta) son recibidos como variables de entorno del archivo de Docker Compose. En este se definen las agencias con datos aleatorios. El identificador de la agencia es el id del cliente. 
+
+Tanto en el cliente como en el servidor se utilizan las funciones de envío y recepción de mensajes definidas en `communicationProtocol.go` y `communication_protocol.py` para evitar los fenómenos _short read y short write_.
 
 El cliente sabe como serializar los datos de una apuesta para poder enviarlos al servidor, mientras que este último sabe cómo deserializarlos.
 - Cliente: La clase Bet define los datos de la apuesta y los serializa convirtiendo a string con el formato DATO=VALOR, separados por comas.
