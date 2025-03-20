@@ -23,6 +23,34 @@ class Bet:
         self.document = document
         self.birthdate = datetime.date.fromisoformat(birthdate)
         self.number = int(number)
+    
+    @classmethod
+    def deserialize(cls, data: list[str]):
+        fields = data.split("|")
+        agency, first_name, last_name, number, birth_date, dni = None, None, None, None, None, None
+
+        if len(fields) != 6:
+            raise ValueError("Invalid Bet format")
+
+        for field in fields:
+            field_type, field_value = field.split("=")
+
+            if field_type == "AGENCY":
+                agency = field_value
+            elif field_type == "FIRST_NAME":
+                first_name = field_value
+            elif field_type == "LAST_NAME":
+                last_name = field_value
+            elif field_type == "NUMBER":
+                number = field_value
+            elif field_type == "BIRTH_DATE":
+                birth_date = field_value
+            elif field_type == "DNI":
+                dni = field_value
+            else:
+                raise ValueError(f"Invalid Bet format: {data}")
+
+        return cls(agency, first_name, last_name, number, birth_date, dni)
 
 """ Checks whether a bet won the prize or not. """
 def has_won(bet: Bet) -> bool:

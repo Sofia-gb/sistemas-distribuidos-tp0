@@ -1,6 +1,8 @@
 import socket
 import logging
 import sys
+from common.communication_protocol import *
+from common.utils import *
 
 
 class Server:
@@ -34,10 +36,9 @@ class Server:
 
         logging.info("action: shutdown | result: in_progress")
 
-        shutdown_message = "SERVER_SHUTDOWN\n".encode("utf-8")
         for client_sock in self._clients_sockets:
             try:
-                client_sock.send(shutdown_message)
+                send_message(client_sock, Message.SERVER_SHUTDOWN.value)
                 addr = client_sock.getpeername()
                 logging.info(f"action: send_shutdown_message | result: success | ip: {addr[0]}")
                 logging.info(f"action: disconnect_client | result: in_progress | ip: {addr[0]}")
@@ -69,12 +70,11 @@ class Server:
         client socket will also be closed
         """
         try:
-            # TODO: Modify the receive to avoid short-reads
-            msg = client_sock.recv(1024).rstrip().decode('utf-8')
+            msg = receive_message(client_sock)
             addr = client_sock.getpeername()
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
-
-            if msg == "CLIENT_SHUTDOWN":
+            msg_type = Message.from_string(msg)
+            if msg == Message.CLIENT_SHUTDOWN.value:
                 try:
                     logging.info(f"action: disconnect_client | result: in_progress | ip: {addr[0]}")
                     client_sock.close()
@@ -84,9 +84,18 @@ class Server:
                     logging.error(f"action: disconnect_client | result: fail | ip: {addr[0]} | error: {e.strerror}")
                 finally:
                     return
-
-            # TODO: Modify the send to avoid short-writes
-            client_sock.send("{}\n".format(msg).encode('utf-8'))
+            
+            try:
+                bet = Bet.deserialize(msg)
+                store_bets([bet])
+                logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
+                send_message(client_sock, Message.SUCCESS.value)
+            except ValueError as e:
+                logging.error(f"action: apuesta_almacenada | result: fail | dni: {bet.document} | numero: {bet.number} | error: {e}")
+                send_message(client_sock, Message.FAIL.value)
+            except OSError as e:
+                logging.error("action: send_message | result: fail | error: {e}")
+            
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:

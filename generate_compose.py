@@ -1,6 +1,14 @@
+import random
 import sys
 from enum import Enum
 import yaml
+
+DNI_LOW_BOUND = 10000000
+DNI_HIGH_BOUND = 99999999
+YEAR_LOW_BOUND = 1950
+YEAR_HIGH_BOUND = 2000
+BET_LOW_BOUND = 100
+BET_HIGH_BOUND = 10000
 
 
 class ComposeGeneratorError(Enum):
@@ -48,12 +56,30 @@ def parse_arguments(output_file, number_of_clients):
 
     return output_file, int(number_of_clients)
 
+def generate_random_dni():
+    """Generates a random DNI number."""
+    return str(random.randint(DNI_LOW_BOUND, DNI_HIGH_BOUND))
+
+def generate_random_birthdate():
+    """Generates a random birthdate."""
+    year = random.randint(YEAR_LOW_BOUND, YEAR_HIGH_BOUND)
+    month = random.randint(1, 12)
+    day = random.randint(1, 28)
+    return f"{year:04d}-{month:02d}-{day:02d}"
+
+def generate_random_number():
+    """Generates a random number."""
+    return str(random.randint(BET_LOW_BOUND, BET_HIGH_BOUND))
+
 
 def config_clients(compose, number_of_clients):
     """ Configures the clients in the compose file. 
      The number of clients is determined by the number_of_clients parameter. """
 
-    for i in range(1, number_of_clients + 1):
+    names = ["Santiago", "Lionel", "Maria", "Pablo", "Ana"]
+    surnames = ["Lorca", "Rinaldi", "Belis", "Saez", "Romero"]
+
+    for i in range(1, 6):
         compose["services"][f"client{i}"] = {
             "container_name": f"client{i}",
             "image": "client:latest",
@@ -63,7 +89,12 @@ def config_clients(compose, number_of_clients):
                 "SERVER_HOST": "server",
                 "CLIENT_ID": str(i),
                 "CLIENT_LOG_LEVEL": "DEBUG",
-                "CONFIG_FILE": "/config.yaml"
+                "CONFIG_FILE": "/config.yaml",
+                "NOMBRE": random.choice(names),
+                "APELLIDO": random.choice(surnames),
+                "DOCUMENTO": generate_random_dni(),
+                "NACIMIENTO": generate_random_birthdate(),
+                "NUMERO": generate_random_number()
             },
             "networks": ["testing_net"],
             "entrypoint": "/client",

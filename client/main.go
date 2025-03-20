@@ -27,6 +27,11 @@ func InitConfig() (*viper.Viper, error) {
 
 	// Configure viper to read env variables with the CLI_ prefix
 	v.AutomaticEnv()
+	v.BindEnv("NOMBRE")
+	v.BindEnv("APELLIDO")
+	v.BindEnv("DOCUMENTO")
+	v.BindEnv("NACIMIENTO")
+	v.BindEnv(("NUMERO"))
 	v.SetEnvPrefix("cli")
 	// Use a replacer to replace env variables underscores with points. This let us
 	// use nested configurations in the config file and at the same time define
@@ -87,12 +92,17 @@ func InitLogger(logLevel string) error {
 // PrintConfig Print all the configuration parameters of the program.
 // For debugging purposes only
 func PrintConfig(v *viper.Viper) {
-	log.Infof("action: config | result: success | client_id: %s | server_address: %s | loop_amount: %v | loop_period: %v | log_level: %s",
+	log.Infof("action: config | result: success | client_id: %s | server_address: %s | loop_amount: %v | loop_period: %v | log_level: %s | name: %s | surname: %s | bet: %v | birth_date: %s | dni: %s",
 		v.GetString("id"),
 		v.GetString("server.address"),
 		v.GetInt("loop.amount"),
 		v.GetDuration("loop.period"),
 		v.GetString("log.level"),
+		v.GetString("NOMBRE"),
+		v.GetString("APELLIDO"),
+		v.GetInt("NUMERO"),
+		v.GetString("NACIMIENTO"),
+		v.GetString("DOCUMENTO"),
 	)
 }
 
@@ -114,6 +124,11 @@ func main() {
 		ID:            v.GetString("id"),
 		LoopAmount:    v.GetInt("loop.amount"),
 		LoopPeriod:    v.GetDuration("loop.period"),
+		Name:          v.GetString("NOMBRE"),
+		Surname:       v.GetString("APELLIDO"),
+		Bet:           v.GetInt("NUMERO"),
+		BirthDate:     v.GetString("NACIMIENTO"),
+		DNI:           v.GetString("DOCUMENTO"),
 	}
 
 	client := common.NewClient(clientConfig)
@@ -122,7 +137,7 @@ func main() {
 	signal.Notify(sigs, syscall.SIGTERM)
 
 	go func() {
-		client.StartClientLoop()
+		client.StartClient()
 	}()
 
 	<-sigs
