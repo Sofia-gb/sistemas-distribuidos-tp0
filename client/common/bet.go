@@ -14,14 +14,14 @@ type Bet struct {
 
 // Serialize Returns a string representation of the Bet entity
 func (b *Bet) Serialize() string {
-	return fmt.Sprintf("AGENCY=%s|FIRST_NAME=%s|LAST_NAME=%s|NUMBER=%d|BIRTH_DATE=%s|DNI=%s", b.agency, b.first_name, b.last_name, b.number, b.birthDate, b.dni)
+	return fmt.Sprintf("AGENCY=%s,FIRST_NAME=%s,LAST_NAME=%s,NUMBER=%d,BIRTH_DATE=%s,DNI=%s", b.agency, b.first_name, b.last_name, b.number, b.birthDate, b.dni)
 }
 
 // DeserializeBet Receives a string and returns a Bet entity
 func DeserializeBet(betString string) *Bet {
 	var agency, name, surname, birthDate, dni string
 	var number int
-	fmt.Sscanf(betString, "AGENCY=%s|FIRST_NAME=%s|LAST_NAME=%s|NUMBER=%d|BIRTH_DATE=%s|DNI=%s", &agency, &name, &surname, &number, &birthDate, &dni)
+	fmt.Sscanf(betString, "AGENCY=%s,FIRST_NAME=%s,LAST_NAME=%s,NUMBER=%d,BIRTH_DATE=%s,DNI=%s", &agency, &name, &surname, &number, &birthDate, &dni)
 	return &Bet{agency, name, surname, number, birthDate, dni}
 }
 

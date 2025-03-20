@@ -26,7 +26,7 @@ class Bet:
     
     @classmethod
     def deserialize(cls, data: list[str]):
-        fields = data.split("|")
+        fields = data.split(",")
         agency, first_name, last_name, number, birth_date, dni = None, None, None, None, None, None
 
         if len(fields) != 6:
