@@ -79,7 +79,7 @@ def config_clients(compose, number_of_clients):
     names = ["Santiago", "Lionel", "Maria", "Pablo", "Ana"]
     surnames = ["Lorca", "Rinaldi", "Belis", "Saez", "Romero"]
 
-    for i in range(1, 6):
+    for i in range(1, number_of_clients + 1):
         compose["services"][f"client{i}"] = {
             "container_name": f"client{i}",
             "image": "client:latest",
