@@ -89,7 +89,7 @@ func (c *Client) StartClient() {
 	case SERVER_SHUTDOWN:
 		c.Close()
 	default:
-		log.Errorf("action: apuesta_enviada | result: success | dni: %v | numero: %v",
+		log.Errorf("action: apuesta_enviada | result: fail | dni: %v | numero: %v",
 			c.config.DNI,
 			c.config.Bet,
 		)

@@ -1,4 +1,3 @@
-import socket
 from enum import Enum
 
 class Message(Enum):
@@ -14,24 +13,24 @@ class Message(Enum):
         return Message.__members__.get(msg, Message.UNKNOWN)
 
 
-def send_message(conn: socket.socket, msg: str):
+def send_message(socket, msg):
     """Ensures the complete sending of a message (avoiding short-write)."""
     msg = f"{msg}\n".encode('utf-8') 
     total_sent = 0
 
     while total_sent < len(msg):
-        sent = conn.send(msg[total_sent:])
+        sent = socket.send(msg[total_sent:])
         if sent == 0:
             raise RuntimeError("Connection broken")
         total_sent += sent
 
 
-def receive_message(conn: socket.socket) -> str:
+def receive_message(socket):
     """Ensures the complete reception of a message (avoiding short-read)."""
     buffer = bytearray()
     
     while True:
-        chunk = conn.recv(1024)
+        chunk = socket.recv(1024)
         if not chunk:
             raise RuntimeError("Connection broken")
         

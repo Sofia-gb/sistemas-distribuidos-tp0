@@ -390,3 +390,21 @@ Durante la ejecución del cliente, se crean sockets para cada mensaje enviado. S
 Cuando el servidor recibe la signal `SIGTERM`, le avisa a los clientes conectados acerca del proceso de cierre enviándoles el mensaje `SERVER_SHUTDOWN`. Luego cierra todas las conexiones abiertas con los clientes. Por último, se cierra el socket del servidor.
 
 Si durante el manejo de una conexión el servidor recibe `CLIENT_SHUTDOWN`, cierra el socket asociado y lo elimina de la lista de conexiones abiertas.
+
+### Ejercicio 5
+
+Tanto en el cliente como en el servidor se utilizan las funciones de envío y recepción de mensajes definidas en `communicationProtocol.go` y `communication_protocol.py` para evitar los fenómenos _short read y short write_.
+
+Los datos de cada agencia (nombre, apellido, dni, fecha de nacimiento y número de la apuesta) son recibidos como variables de entorno del archivo de Docker Compose. En este se definen las 5 agencias con datos aleatorios. El identificador de la agencia es el id del cliente.
+
+El cliente sabe como serializar los datos de una apuesta para poder enviarlos al servidor, mientras que este último sabe cómo deserializarlos.
+- Cliente: La clase Bet define los datos de la apuesta y los serializa convirtiendo a string con el formato DATO=VALOR, separados por comas.
+- Servidor: La clase Bet tiene el método de clase `deserialize(cls, data: str)` que divide la cadena recibida por comas y obtiene los datos de la apuesta para luego crear una instancia de Bet. Si el formato es inesperado, lanza un error.
+
+Cada agencia envía la apuesta al servidor con `SendMessage(conn net.Conn, msg string) error`. Luego recibe la confirmación con `ReceiveMessage(conn net.Conn) (string, error)`. La respuesta del servidor puede ser
+- 'SUCCESS': La apuesta fue almacenada correctamente. Ante esta respuesta, el cliente imprime por log: `action: apuesta_enviada | result: success | dni: ${DNI} | numero: ${NUMERO}`.
+- FAIL: La apuesta no fue almacenada. Puede ocurrir, por ejemplo, si se reciben datos inválidos. En este caso, la agencia imprime un log de error: `action: apuesta_enviada | result: fail | dni: ${DNI} | numero: ${NUMERO}`.
+
+El Servidor, al recibir una apuesta con `receive_message(socket)`, intenta almacenarla. Dependiendo del resultado de esta operación, envía a la agencia el mensaje de confirmación o error mencionado previamente, utilizando `send_message(socket, msg)`.
+- Caso de éxito: se imprime por log `action: apuesta_almacenada | result: success | dni: ${DNI} | numero: ${NUMERO}`.
+- Caso de error: se imprime por log `action: apuesta_almacenada | result: fail | dni: {bet.document} | numero: {bet.number} | error: {e}`
