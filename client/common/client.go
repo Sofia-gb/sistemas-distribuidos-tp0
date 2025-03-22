@@ -1,7 +1,7 @@
 package common
 
 import (
-	"fmt"
+	"bufio"
 	"net"
 	"os"
 	"strconv"
@@ -129,18 +129,17 @@ func CreateBetsFromCSV(config ClientConfig) []*Bet {
 	defer file.Close()
 	var bets []*Bet
 
-	var line string
-	for {
-		_, err := fmt.Fscanf(file, "%s\n", &line)
-		if err != nil {
-			break
-		}
+	scanner := bufio.NewScanner(file)
 
+	for scanner.Scan() {
+		line := scanner.Text()
 		betData := strings.Split(line, ",")
 
 		if len(betData) != 5 {
+			log.Warningf("action: parse_bet | result: fail | reason: incorrect format | line: %v", line)
 			continue
 		}
+
 		firstName := betData[0]
 		lastName := betData[1]
 		dni := betData[2]
@@ -154,5 +153,6 @@ func CreateBetsFromCSV(config ClientConfig) []*Bet {
 		bet := NewBet(config.ID, firstName, lastName, birthDate, dni, amount)
 		bets = append(bets, bet)
 	}
+	log.Infof("action: read_csv_file | result: success | client_id: %v | bets_amount: %v", config.ID, len(bets))
 	return bets
 }
