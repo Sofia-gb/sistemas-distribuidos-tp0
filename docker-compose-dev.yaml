@@ -11,16 +11,17 @@ services:
     container_name: client1
     depends_on:
     - server
-    entrypoint: /client
+    entrypoint: /bin/sh -c 'unzip -o data/dataset.zip agency-1.csv -d data/ && /client'
     environment:
-      APELLIDO: Lorca
+      APELLIDO: Saez
+      BETS_FILE: /data/agency-1.csv
       CLIENT_ID: '1'
       CLIENT_LOG_LEVEL: DEBUG
       CONFIG_FILE: /config.yaml
-      DOCUMENTO: '39478438'
-      NACIMIENTO: '1953-06-25'
-      NOMBRE: Ana
-      NUMERO: '5580'
+      DOCUMENTO: '47803087'
+      NACIMIENTO: '1977-02-15'
+      NOMBRE: Santiago
+      NUMERO: '7942'
       SERVER_HOST: server
     image: client:latest
     networks:
@@ -28,22 +29,26 @@ services:
     volumes:
     - source: ./client/config.yaml
       target: /config.yaml
+      type: bind
+    - source: .data/
+      target: /data
       type: bind
   client2:
     build: ./client
     container_name: client2
     depends_on:
     - server
-    entrypoint: /client
+    entrypoint: /bin/sh -c 'unzip -o data/dataset.zip agency-2.csv -d data/ && /client'
     environment:
-      APELLIDO: Lorca
+      APELLIDO: Romero
+      BETS_FILE: /data/agency-2.csv
       CLIENT_ID: '2'
       CLIENT_LOG_LEVEL: DEBUG
       CONFIG_FILE: /config.yaml
-      DOCUMENTO: '36315981'
-      NACIMIENTO: '1975-06-14'
-      NOMBRE: Ana
-      NUMERO: '9316'
+      DOCUMENTO: '72800270'
+      NACIMIENTO: '2000-11-13'
+      NOMBRE: Maria
+      NUMERO: '9305'
       SERVER_HOST: server
     image: client:latest
     networks:
@@ -51,22 +56,26 @@ services:
     volumes:
     - source: ./client/config.yaml
       target: /config.yaml
+      type: bind
+    - source: .data/
+      target: /data
       type: bind
   client3:
     build: ./client
     container_name: client3
     depends_on:
     - server
-    entrypoint: /client
+    entrypoint: /bin/sh -c 'unzip -o data/dataset.zip agency-3.csv -d data/ && /client'
     environment:
       APELLIDO: Romero
+      BETS_FILE: /data/agency-3.csv
       CLIENT_ID: '3'
       CLIENT_LOG_LEVEL: DEBUG
       CONFIG_FILE: /config.yaml
-      DOCUMENTO: '12715457'
-      NACIMIENTO: '1962-03-10'
-      NOMBRE: Santiago
-      NUMERO: '8947'
+      DOCUMENTO: '47246265'
+      NACIMIENTO: '1990-04-23'
+      NOMBRE: Maria
+      NUMERO: '2319'
       SERVER_HOST: server
     image: client:latest
     networks:
@@ -74,22 +83,26 @@ services:
     volumes:
     - source: ./client/config.yaml
       target: /config.yaml
+      type: bind
+    - source: .data/
+      target: /data
       type: bind
   client4:
     build: ./client
     container_name: client4
     depends_on:
     - server
-    entrypoint: /client
+    entrypoint: /bin/sh -c 'unzip -o data/dataset.zip agency-4.csv -d data/ && /client'
     environment:
       APELLIDO: Belis
+      BETS_FILE: /data/agency-4.csv
       CLIENT_ID: '4'
       CLIENT_LOG_LEVEL: DEBUG
       CONFIG_FILE: /config.yaml
-      DOCUMENTO: '63717825'
-      NACIMIENTO: '1960-07-15'
-      NOMBRE: Lionel
-      NUMERO: '3081'
+      DOCUMENTO: '35863389'
+      NACIMIENTO: '1986-09-12'
+      NOMBRE: Maria
+      NUMERO: '9693'
       SERVER_HOST: server
     image: client:latest
     networks:
@@ -98,21 +111,25 @@ services:
     - source: ./client/config.yaml
       target: /config.yaml
       type: bind
+    - source: .data/
+      target: /data
+      type: bind
   client5:
     build: ./client
     container_name: client5
     depends_on:
     - server
-    entrypoint: /client
+    entrypoint: /bin/sh -c 'unzip -o data/dataset.zip agency-5.csv -d data/ && /client'
     environment:
-      APELLIDO: Lorca
+      APELLIDO: Rinaldi
+      BETS_FILE: /data/agency-5.csv
       CLIENT_ID: '5'
       CLIENT_LOG_LEVEL: DEBUG
       CONFIG_FILE: /config.yaml
-      DOCUMENTO: '21402092'
-      NACIMIENTO: '1974-09-09'
-      NOMBRE: Lionel
-      NUMERO: '2391'
+      DOCUMENTO: '22384247'
+      NACIMIENTO: '1956-12-12'
+      NOMBRE: Pablo
+      NUMERO: '7138'
       SERVER_HOST: server
     image: client:latest
     networks:
@@ -120,6 +137,9 @@ services:
     volumes:
     - source: ./client/config.yaml
       target: /config.yaml
+      type: bind
+    - source: .data/
+      target: /data
       type: bind
   server:
     build: ./server

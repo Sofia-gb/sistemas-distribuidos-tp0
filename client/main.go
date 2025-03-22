@@ -32,6 +32,7 @@ func InitConfig() (*viper.Viper, error) {
 	v.BindEnv("DOCUMENTO")
 	v.BindEnv("NACIMIENTO")
 	v.BindEnv(("NUMERO"))
+	v.BindEnv("BETS_FILE")
 	v.SetEnvPrefix("cli")
 	// Use a replacer to replace env variables underscores with points. This let us
 	// use nested configurations in the config file and at the same time define
@@ -92,7 +93,7 @@ func InitLogger(logLevel string) error {
 // PrintConfig Print all the configuration parameters of the program.
 // For debugging purposes only
 func PrintConfig(v *viper.Viper) {
-	log.Infof("action: config | result: success | client_id: %s | server_address: %s | loop_amount: %v | loop_period: %v | log_level: %s | name: %s | surname: %s | bet: %v | birth_date: %s | dni: %s",
+	log.Infof("action: config | result: success | client_id: %s | server_address: %s | loop_amount: %v | loop_period: %v | log_level: %s | name: %s | surname: %s | bet: %v | birth_date: %s | dni: %s | bets_file: %s",
 		v.GetString("id"),
 		v.GetString("server.address"),
 		v.GetInt("loop.amount"),
@@ -103,6 +104,7 @@ func PrintConfig(v *viper.Viper) {
 		v.GetInt("NUMERO"),
 		v.GetString("NACIMIENTO"),
 		v.GetString("DOCUMENTO"),
+		v.GetString("BETS_FILE"),
 	)
 }
 
@@ -129,6 +131,7 @@ func main() {
 		Bet:           v.GetInt("NUMERO"),
 		BirthDate:     v.GetString("NACIMIENTO"),
 		DNI:           v.GetString("DOCUMENTO"),
+		BetsFile:      v.GetString("BETS_FILE"),
 	}
 
 	client := common.NewClient(clientConfig)

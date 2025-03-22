@@ -20,6 +20,7 @@ type ClientConfig struct {
 	Bet           int
 	BirthDate     string
 	DNI           string
+	BetsFile      string
 }
 
 // Client Entity that encapsulates how

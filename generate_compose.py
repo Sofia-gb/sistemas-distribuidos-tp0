@@ -94,15 +94,20 @@ def config_clients(compose, number_of_clients):
                 "APELLIDO": random.choice(surnames),
                 "DOCUMENTO": generate_random_dni(),
                 "NACIMIENTO": generate_random_birthdate(),
-                "NUMERO": generate_random_number()
+                "NUMERO": generate_random_number(),
+                "BETS_FILE": f"/data/agency-{i}.csv"
             },
             "networks": ["testing_net"],
-            "entrypoint": "/client",
+            "entrypoint": f"/bin/sh -c 'unzip -o data/dataset.zip agency-{i}.csv -d data/ && /client'", # extrae agency-{i}.csv y lo guarda en /data/
             "volumes": [
                 {
                     "type": "bind",
                     "source": "./client/config.yaml",
                     "target": "/config.yaml"
+                },
+                {"type": "bind", 
+                 "source": ".data/", 
+                 "target": "/data"
                 }
             ]
         }
