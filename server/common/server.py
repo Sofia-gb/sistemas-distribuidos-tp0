@@ -74,7 +74,7 @@ class Server:
             addr = client_sock.getpeername()
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
             msg_type = Message.from_string(msg)
-            if msg_type == Message.CLIENT_SHUTDOWN.value:
+            if msg_type == Message.CLIENT_SHUTDOWN:
                 try:
                     logging.info(f"action: disconnect_client | result: in_progress | ip: {addr[0]}")
                     client_sock.close()
