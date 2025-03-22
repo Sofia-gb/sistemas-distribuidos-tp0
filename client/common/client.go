@@ -93,7 +93,7 @@ func (c *Client) StartClient() {
 			)
 		}
 	}
-
+	SendMessage(c.conn, Message(CLIENT_SHUTDOWN).ToString())
 	c.conn.Close()
 }
 

@@ -69,38 +69,45 @@ class Server:
         If a problem arises in the communication with the client, the
         client socket will also be closed
         """
-        try:
-            msg = receive_message(client_sock)
-            addr = client_sock.getpeername()
-            logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
-            msg_type = Message.from_string(msg)
-            if msg == Message.CLIENT_SHUTDOWN.value:
-                try:
-                    logging.info(f"action: disconnect_client | result: in_progress | ip: {addr[0]}")
-                    client_sock.close()
-                    logging.info(f"action: disconnect_client | result: success | ip: {addr[0]}")
-                    self._clients_sockets.remove(client_sock)
-                except OSError as e:
-                    logging.error(f"action: disconnect_client | result: fail | ip: {addr[0]} | error: {e.strerror}")
-                finally:
-                    return
-            
+
+        addr = client_sock.getpeername()
+
+        while True:
+
             try:
-                bets = Bet.deserialize_bets(msg)
-                store_bets(bets)
-                logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
-                send_message(client_sock, Message.SUCCESS.value)
-            except ValueError as e:
-                logging.error(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
-                send_message(client_sock, Message.FAIL.value)
+                
+                msg = receive_message(client_sock)
+                
+                logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
+                msg_type = Message.from_string(msg)
+                if msg_type == Message.CLIENT_SHUTDOWN.value:
+                    try:
+                        logging.info(f"action: disconnect_client | result: in_progress | ip: {addr[0]}")
+                        client_sock.close()
+                        logging.info(f"action: disconnect_client | result: success | ip: {addr[0]}")
+                        self._clients_sockets.remove(client_sock)
+                    except OSError as e:
+                        logging.error(f"action: disconnect_client | result: fail | ip: {addr[0]} | error: {e.strerror}")
+                    finally:
+                        return
+                
+                try:
+                    bets = Bet.deserialize_bets(msg)
+                    store_bets(bets)
+                    logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
+                    send_message(client_sock, Message.SUCCESS.value)
+                except ValueError as e:
+                    logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")
+                    send_message(client_sock, Message.FAIL.value)
+                except OSError as e:
+                    logging.error(f"action: send_message | result: fail | error: {e.strerror}")
+                
             except OSError as e:
-                logging.error("action: send_message | result: fail | error: {e}")
+                logging.error(f"action: receive_message | result: fail | error: {e.strerror}")
+                break
             
-        except OSError as e:
-            logging.error("action: receive_message | result: fail | error: {e}")
-        finally:
-            client_sock.close()
-            self._clients_sockets.remove(client_sock)
+        client_sock.close()
+        self._clients_sockets.remove(client_sock)
 
     def __accept_new_connection(self):
         """
