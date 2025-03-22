@@ -1,6 +1,11 @@
 package common
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
+
+const MAX_PACKET_SIZE = 8192
 
 // Bet Entity encapsulates information abount an specific bet
 type Bet struct {
@@ -26,14 +31,59 @@ func DeserializeBet(betString string) *Bet {
 }
 
 // NewBet Initializes a new Bet entity
-func NewBet(config ClientConfig) *Bet {
+func NewBet(agency, name, surname, birthDate, dni string, number int) *Bet {
 	bet := &Bet{
-		agency:     config.ID,
-		first_name: config.Name,
-		last_name:  config.Surname,
-		number:     config.Bet,
-		birthDate:  config.BirthDate,
-		dni:        config.DNI,
+		agency:     agency,
+		first_name: name,
+		last_name:  surname,
+		number:     number,
+		birthDate:  birthDate,
+		dni:        dni,
 	}
 	return bet
+}
+
+type BetsInBatches struct {
+	bets []*Bet
+}
+
+// CreateBetsInBatches divides the bets into batches that don't exceed the max batch size
+func CreateBetsInBatches(bets []*Bet, maxBatchSize int) []*BetsInBatches {
+	var batches []*BetsInBatches
+	var currentBatch []*Bet
+	var currentBatchSize int
+
+	for _, bet := range bets {
+		serializedBet := bet.Serialize()
+		betSize := len(serializedBet)
+
+		if currentBatchSize+betSize+1 > MAX_PACKET_SIZE || len(currentBatch) == maxBatchSize {
+			batches = append(batches, &BetsInBatches{currentBatch})
+			currentBatch = []*Bet{bet}
+			currentBatchSize = betSize
+		} else {
+			currentBatch = append(currentBatch, bet)
+			currentBatchSize += betSize
+		}
+	}
+	if len(currentBatch) > 0 {
+		batches = append(batches, &BetsInBatches{currentBatch})
+	}
+
+	return batches
+}
+
+// SerializeBatch serializes a batch of bets
+func (b *BetsInBatches) Serialize() string {
+	betsSerialized := []string{}
+	for _, bet := range b.bets {
+		betsSerialized = append(betsSerialized, bet.Serialize())
+	}
+	return strings.Join(betsSerialized, ";")
+
+}
+
+// Size returns the number of bets in the batch
+func (b *BetsInBatches) Size() int {
+	return len(b.bets)
 }

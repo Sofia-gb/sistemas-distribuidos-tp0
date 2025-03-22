@@ -56,18 +56,18 @@ def parse_arguments(output_file, number_of_clients):
 
     return output_file, int(number_of_clients)
 
-def generate_random_dni():
+def __generate_random_dni():
     """Generates a random DNI number."""
     return str(random.randint(DNI_LOW_BOUND, DNI_HIGH_BOUND))
 
-def generate_random_birthdate():
+def __generate_random_birthdate():
     """Generates a random birthdate."""
     year = random.randint(YEAR_LOW_BOUND, YEAR_HIGH_BOUND)
     month = random.randint(1, 12)
     day = random.randint(1, 28)
     return f"{year:04d}-{month:02d}-{day:02d}"
 
-def generate_random_number():
+def __generate_random_number():
     """Generates a random number."""
     return str(random.randint(BET_LOW_BOUND, BET_HIGH_BOUND))
 
@@ -76,8 +76,8 @@ def config_clients(compose, number_of_clients):
     """ Configures the clients in the compose file. 
      The number of clients is determined by the number_of_clients parameter. """
 
-    names = ["Santiago", "Lionel", "Maria", "Pablo", "Ana"]
-    surnames = ["Lorca", "Rinaldi", "Belis", "Saez", "Romero"]
+    _names = ["Santiago", "Lionel", "Maria", "Pablo", "Ana"]
+    _surnames = ["Lorca", "Rinaldi", "Belis", "Saez", "Romero"]
 
     for i in range(1, number_of_clients + 1):
         compose["services"][f"client{i}"] = {
@@ -90,11 +90,6 @@ def config_clients(compose, number_of_clients):
                 "CLIENT_ID": str(i),
                 "CLIENT_LOG_LEVEL": "DEBUG",
                 "CONFIG_FILE": "/config.yaml",
-                "NOMBRE": random.choice(names),
-                "APELLIDO": random.choice(surnames),
-                "DOCUMENTO": generate_random_dni(),
-                "NACIMIENTO": generate_random_birthdate(),
-                "NUMERO": generate_random_number(),
                 "BETS_FILE": f"/data/agency-{i}.csv"
             },
             "networks": ["testing_net"],

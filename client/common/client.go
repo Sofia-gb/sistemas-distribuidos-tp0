@@ -1,7 +1,11 @@
 package common
 
 import (
+	"fmt"
 	"net"
+	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/op/go-logging"
@@ -11,31 +15,28 @@ var log = logging.MustGetLogger("log")
 
 // ClientConfig Configuration used by the client
 type ClientConfig struct {
-	ID            string
-	ServerAddress string
-	LoopAmount    int
-	LoopPeriod    time.Duration
-	Name          string
-	Surname       string
-	Bet           int
-	BirthDate     string
-	DNI           string
-	BetsFile      string
+	ID             string
+	ServerAddress  string
+	LoopAmount     int
+	LoopPeriod     time.Duration
+	BetsFile       string
+	BatchMaxAmount int
 }
 
 // Client Entity that encapsulates how
 type Client struct {
 	config ClientConfig
 	conn   net.Conn
-	bet    *Bet
+	bets   []*Bet
 }
 
 // NewClient Initializes a new client receiving the configuration
 // as a parameter
 func NewClient(config ClientConfig) *Client {
+	bets := CreateBetsFromCSV(config)
 	client := &Client{
 		config: config,
-		bet:    NewBet(config),
+		bets:   bets,
 	}
 	return client
 }
@@ -60,41 +61,40 @@ func (c *Client) createClientSocket() error {
 func (c *Client) StartClient() {
 	c.createClientSocket()
 
-	SendMessage(c.conn, c.bet.Serialize())
+	batches := CreateBetsInBatches(c.bets, c.config.BatchMaxAmount)
 
-	msg, err := ReceiveMessage(c.conn)
+	for _, batch := range batches {
+
+		SendMessage(c.conn, batch.Serialize())
+
+		msg, err := ReceiveMessage(c.conn)
+
+		if err != nil {
+			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v", c.config.ID, err)
+			return
+		}
+
+		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v", c.config.ID, msg)
+
+		msgType := NewMessage(msg)
+
+		switch msgType {
+		case SUCCESS:
+			log.Infof("action: apuesta_enviada | result: success | agency: %v | batch_size: %v",
+				c.config.ID,
+				batch.Size(),
+			)
+		case SERVER_SHUTDOWN:
+			c.Close()
+		default:
+			log.Errorf("action: apuesta_enviada | result: fail | agency: %v | batch_size: %v",
+				c.config.ID,
+				batch.Size(),
+			)
+		}
+	}
 
 	c.conn.Close()
-
-	if err != nil {
-		log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
-			c.config.ID,
-			err,
-		)
-		return
-	}
-
-	log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
-		c.config.ID,
-		msg,
-	)
-
-	msgType := NewMessage(msg)
-
-	switch msgType {
-	case SUCCESS:
-		log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v",
-			c.config.DNI,
-			c.config.Bet,
-		)
-	case SERVER_SHUTDOWN:
-		c.Close()
-	default:
-		log.Errorf("action: apuesta_enviada | result: fail | dni: %v | numero: %v",
-			c.config.DNI,
-			c.config.Bet,
-		)
-	}
 }
 
 // Close gracefully shuts down the client by closing the socket connection.
@@ -117,4 +117,42 @@ func (c *Client) Close() {
 			log.Infof("action: close_connection | result: success | client_id: %v", c.config.ID)
 		}
 	}
+}
+
+// CreateBetsFromCSV Lee el archivo CSV y crea una lista de apuestas
+func CreateBetsFromCSV(config ClientConfig) []*Bet {
+	file, err := os.Open(config.BetsFile)
+	if err != nil {
+		log.Errorf("action: read_csv_file | result: fail | client_id: %v | error: %v", config.ID, err)
+		return nil
+	}
+	defer file.Close()
+	var bets []*Bet
+
+	var line string
+	for {
+		_, err := fmt.Fscanf(file, "%s\n", &line)
+		if err != nil {
+			break
+		}
+
+		betData := strings.Split(line, ",")
+
+		if len(betData) != 5 {
+			continue
+		}
+		firstName := betData[0]
+		lastName := betData[1]
+		dni := betData[2]
+		birthDate := betData[3]
+		amount, err := strconv.Atoi(betData[4])
+		if err != nil {
+			log.Errorf("action: parse_bet_amount | result: fail | client_id: %v | error: %v", config.ID, err)
+			continue
+		}
+
+		bet := NewBet(config.ID, firstName, lastName, birthDate, dni, amount)
+		bets = append(bets, bet)
+	}
+	return bets
 }

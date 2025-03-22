@@ -1,5 +1,7 @@
 from enum import Enum
 
+MAX_PACKET_SIZE = 8192
+
 class Message(Enum):
     SUCCESS = "SUCCESS"
     FAIL = "FAIL"
@@ -30,7 +32,7 @@ def receive_message(socket):
     buffer = bytearray()
     
     while True:
-        chunk = socket.recv(1024)
+        chunk = socket.recv(MAX_PACKET_SIZE)
         if not chunk:
             raise RuntimeError("Connection broken")
         

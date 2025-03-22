@@ -25,7 +25,15 @@ class Bet:
         self.number = int(number)
     
     @classmethod
-    def deserialize(cls, data: list[str]):
+    def deserialize_bets(cls, data: str):
+        bets_data = data.split(";")
+        bets = []
+        for bet_data in bets_data:
+            bets.append(cls.deserialize(bet_data))
+        return bets
+
+    @classmethod
+    def deserialize(cls, data: str):
         fields = data.split(",")
         agency, first_name, last_name, number, birth_date, dni = None, None, None, None, None, None
 

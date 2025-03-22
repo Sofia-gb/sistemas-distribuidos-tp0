@@ -23,7 +23,7 @@ func SendMessage(conn net.Conn, msg string) error {
 
 // ReceiveMessage ensures the complete reception of a message (avoiding short-read).
 func ReceiveMessage(conn net.Conn) (string, error) {
-	buffer := make([]byte, 1024)
+	buffer := make([]byte, MAX_PACKET_SIZE)
 	totalRead := 0
 
 	for {

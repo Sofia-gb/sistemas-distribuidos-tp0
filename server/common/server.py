@@ -86,12 +86,12 @@ class Server:
                     return
             
             try:
-                bet = Bet.deserialize(msg)
-                store_bets([bet])
-                logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
+                bets = Bet.deserialize_bets(msg)
+                store_bets(bets)
+                logging.info(f"action: apuesta_recibida | result: success | cantidad: ${len(bets)}")
                 send_message(client_sock, Message.SUCCESS.value)
             except ValueError as e:
-                logging.error(f"action: apuesta_almacenada | result: fail | dni: {bet.document} | numero: {bet.number} | error: {e}")
+                logging.error(f"action: apuesta_recibida | result: success | cantidad: ${len(bets)}")
                 send_message(client_sock, Message.FAIL.value)
             except OSError as e:
                 logging.error("action: send_message | result: fail | error: {e}")

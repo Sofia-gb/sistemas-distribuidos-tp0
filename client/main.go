@@ -27,11 +27,7 @@ func InitConfig() (*viper.Viper, error) {
 
 	// Configure viper to read env variables with the CLI_ prefix
 	v.AutomaticEnv()
-	v.BindEnv("NOMBRE")
-	v.BindEnv("APELLIDO")
-	v.BindEnv("DOCUMENTO")
-	v.BindEnv("NACIMIENTO")
-	v.BindEnv(("NUMERO"))
+
 	v.BindEnv("BETS_FILE")
 	v.SetEnvPrefix("cli")
 	// Use a replacer to replace env variables underscores with points. This let us
@@ -45,6 +41,7 @@ func InitConfig() (*viper.Viper, error) {
 	v.BindEnv("loop", "period")
 	v.BindEnv("loop", "amount")
 	v.BindEnv("log", "level")
+	v.BindEnv("batch", "maxAmount")
 
 	// Try to read configuration from config file. If config file
 	// does not exists then ReadInConfig will fail but configuration
@@ -93,18 +90,14 @@ func InitLogger(logLevel string) error {
 // PrintConfig Print all the configuration parameters of the program.
 // For debugging purposes only
 func PrintConfig(v *viper.Viper) {
-	log.Infof("action: config | result: success | client_id: %s | server_address: %s | loop_amount: %v | loop_period: %v | log_level: %s | name: %s | surname: %s | bet: %v | birth_date: %s | dni: %s | bets_file: %s",
+	log.Infof("action: config | result: success | client_id: %s | server_address: %s | loop_amount: %v | loop_period: %v | log_level: %s | bets_file: %s | batch_max_amount: %v",
 		v.GetString("id"),
 		v.GetString("server.address"),
 		v.GetInt("loop.amount"),
 		v.GetDuration("loop.period"),
 		v.GetString("log.level"),
-		v.GetString("NOMBRE"),
-		v.GetString("APELLIDO"),
-		v.GetInt("NUMERO"),
-		v.GetString("NACIMIENTO"),
-		v.GetString("DOCUMENTO"),
 		v.GetString("BETS_FILE"),
+		v.GetInt("batch.maxAmount"),
 	)
 }
 
@@ -122,16 +115,12 @@ func main() {
 	PrintConfig(v)
 
 	clientConfig := common.ClientConfig{
-		ServerAddress: v.GetString("server.address"),
-		ID:            v.GetString("id"),
-		LoopAmount:    v.GetInt("loop.amount"),
-		LoopPeriod:    v.GetDuration("loop.period"),
-		Name:          v.GetString("NOMBRE"),
-		Surname:       v.GetString("APELLIDO"),
-		Bet:           v.GetInt("NUMERO"),
-		BirthDate:     v.GetString("NACIMIENTO"),
-		DNI:           v.GetString("DOCUMENTO"),
-		BetsFile:      v.GetString("BETS_FILE"),
+		ServerAddress:  v.GetString("server.address"),
+		ID:             v.GetString("id"),
+		LoopAmount:     v.GetInt("loop.amount"),
+		LoopPeriod:     v.GetDuration("loop.period"),
+		BetsFile:       v.GetString("BETS_FILE"),
+		BatchMaxAmount: v.GetInt("batch.maxAmount"),
 	}
 
 	client := common.NewClient(clientConfig)
