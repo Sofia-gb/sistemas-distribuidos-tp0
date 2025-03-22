@@ -91,13 +91,13 @@ class Server:
                 logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
                 send_message(client_sock, Message.SUCCESS.value)
             except ValueError as e:
-                logging.error(f"action: apuesta_almacenada | result: fail | dni: {bet.document} | numero: {bet.number} | error: {e}")
+                logging.error(f"action: apuesta_almacenada | result: fail | dni: {bet.document} | numero: {bet.number} | error: {e.strerror}")
                 send_message(client_sock, Message.FAIL.value)
             except OSError as e:
-                logging.error("action: send_message | result: fail | error: {e}")
+                logging.error(f"action: send_message | result: fail | error: {e.strerror}")
             
         except OSError as e:
-            logging.error("action: receive_message | result: fail | error: {e}")
+            logging.error(f"action: receive_message | result: fail | error: {e.strerror}")
         finally:
             client_sock.close()
             self._clients_sockets.remove(client_sock)
