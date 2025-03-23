@@ -93,8 +93,7 @@ func (c *Client) StartClient() {
 			)
 		}
 	}
-	SendMessage(c.conn, Message(CLIENT_SHUTDOWN).ToString())
-	c.conn.Close()
+	c.Close()
 }
 
 // Close gracefully shuts down the client by closing the socket connection.
@@ -117,6 +116,7 @@ func (c *Client) Close() {
 			log.Infof("action: close_connection | result: success | client_id: %v", c.config.ID)
 		}
 	}
+	os.Exit(0)
 }
 
 // CreateBetsFromCSV Lee el archivo CSV y crea una lista de apuestas
