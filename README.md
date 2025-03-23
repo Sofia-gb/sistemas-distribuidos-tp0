@@ -396,11 +396,13 @@ Si durante el manejo de una conexión el servidor recibe `CLIENT_SHUTDOWN`, cier
 Para ejecutar este ejercicio, pueden seguirse los siguientes pasos:
 
 ```bash
-./generar-compose.sh docker-compose-dev.yaml <cantidad_agencias>
+./generar-compose.sh docker-compose-dev.yaml 5
 docker build -f ./server/Dockerfile -t server:latest .
 docker build -f ./client/Dockerfile -t client:latest .
 docker compose -f docker-compose-dev.yaml up -d
 ```
+
+En el caso de querer configurar menos o más de 5 agencias, es posible modificar el parámetro asociado en `./generar-compose.sh docker-compose-dev.yaml <cantidad_agencias>`.
 
 Los datos de cada agencia (nombre, apellido, dni, fecha de nacimiento y número de la apuesta) son recibidos como variables de entorno del archivo de Docker Compose. En este se definen las agencias con datos aleatorios. El identificador de la agencia es el id del cliente. 
 
