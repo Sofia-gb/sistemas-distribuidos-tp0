@@ -116,6 +116,7 @@ func (c *Client) Close() {
 			log.Infof("action: close_connection | result: success | client_id: %v", c.config.ID)
 		}
 	}
+	time.Sleep(100 * time.Millisecond)
 	os.Exit(0)
 }
 
