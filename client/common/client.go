@@ -4,12 +4,15 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"os"
 	"time"
 
 	"github.com/op/go-logging"
 )
 
 var log = logging.MustGetLogger("log")
+
+const EXIT_CODE = 0
 
 // ClientConfig Configuration used by the client
 type ClientConfig struct {
@@ -95,6 +98,7 @@ func (c *Client) StartClientLoop() {
 
 // Close gracefully shuts down the client by closing the socket connection.
 func (c *Client) Close() {
+	log.Infof("action: shutdown | result: in_progress | client_id: %v", c.config.ID)
 	log.Infof("action: close_connection | result: in_progress | client_id: %v", c.config.ID)
 	if c.conn != nil {
 		_, err := fmt.Fprintln(c.conn, "CLIENT_SHUTDOWN")
@@ -113,4 +117,6 @@ func (c *Client) Close() {
 			log.Infof("action: close_connection | result: success | client_id: %v", c.config.ID)
 		}
 	}
+	log.Infof("action: shutdown | result: success | client_id: %v", c.config.ID)
+	os.Exit(EXIT_CODE)
 }
