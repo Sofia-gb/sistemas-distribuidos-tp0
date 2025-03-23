@@ -12,7 +12,10 @@ import (
 
 var log = logging.MustGetLogger("log")
 
-const EXIT_CODE = 0
+const (
+	ExitSuccess = 0
+	ExitFailure = 1
+)
 
 // ClientConfig Configuration used by the client
 type ClientConfig struct {
@@ -48,6 +51,7 @@ func (c *Client) createClientSocket() error {
 			c.config.ID,
 			err,
 		)
+		os.Exit(ExitFailure)
 	}
 	c.conn = conn
 	return nil
@@ -118,5 +122,5 @@ func (c *Client) Close() {
 		}
 	}
 	log.Infof("action: shutdown | result: success | client_id: %v", c.config.ID)
-	os.Exit(EXIT_CODE)
+	os.Exit(ExitSuccess)
 }
