@@ -11,17 +11,12 @@ services:
     container_name: client1
     depends_on:
     - server
-    entrypoint: /bin/sh -c 'unzip -o data/dataset.zip agency-1.csv -d data/ && /client'
+    entrypoint: /client
     environment:
-      APELLIDO: Saez
       BETS_FILE: /data/agency-1.csv
       CLIENT_ID: '1'
       CLIENT_LOG_LEVEL: DEBUG
       CONFIG_FILE: /config.yaml
-      DOCUMENTO: '47803087'
-      NACIMIENTO: '1977-02-15'
-      NOMBRE: Santiago
-      NUMERO: '7942'
       SERVER_HOST: server
     image: client:latest
     networks:
@@ -30,25 +25,20 @@ services:
     - source: ./client/config.yaml
       target: /config.yaml
       type: bind
-    - source: .data/
-      target: /data
+    - source: .data/agency-1.csv
+      target: /data/agency-1.csv
       type: bind
   client2:
     build: ./client
     container_name: client2
     depends_on:
     - server
-    entrypoint: /bin/sh -c 'unzip -o data/dataset.zip agency-2.csv -d data/ && /client'
+    entrypoint: /client
     environment:
-      APELLIDO: Romero
       BETS_FILE: /data/agency-2.csv
       CLIENT_ID: '2'
       CLIENT_LOG_LEVEL: DEBUG
       CONFIG_FILE: /config.yaml
-      DOCUMENTO: '72800270'
-      NACIMIENTO: '2000-11-13'
-      NOMBRE: Maria
-      NUMERO: '9305'
       SERVER_HOST: server
     image: client:latest
     networks:
@@ -57,25 +47,20 @@ services:
     - source: ./client/config.yaml
       target: /config.yaml
       type: bind
-    - source: .data/
-      target: /data
+    - source: .data/agency-2.csv
+      target: /data/agency-2.csv
       type: bind
   client3:
     build: ./client
     container_name: client3
     depends_on:
     - server
-    entrypoint: /bin/sh -c 'unzip -o data/dataset.zip agency-3.csv -d data/ && /client'
+    entrypoint: /client
     environment:
-      APELLIDO: Romero
       BETS_FILE: /data/agency-3.csv
       CLIENT_ID: '3'
       CLIENT_LOG_LEVEL: DEBUG
       CONFIG_FILE: /config.yaml
-      DOCUMENTO: '47246265'
-      NACIMIENTO: '1990-04-23'
-      NOMBRE: Maria
-      NUMERO: '2319'
       SERVER_HOST: server
     image: client:latest
     networks:
@@ -84,25 +69,20 @@ services:
     - source: ./client/config.yaml
       target: /config.yaml
       type: bind
-    - source: .data/
-      target: /data
+    - source: .data/agency-3.csv
+      target: /data/agency-3.csv
       type: bind
   client4:
     build: ./client
     container_name: client4
     depends_on:
     - server
-    entrypoint: /bin/sh -c 'unzip -o data/dataset.zip agency-4.csv -d data/ && /client'
+    entrypoint: /client
     environment:
-      APELLIDO: Belis
       BETS_FILE: /data/agency-4.csv
       CLIENT_ID: '4'
       CLIENT_LOG_LEVEL: DEBUG
       CONFIG_FILE: /config.yaml
-      DOCUMENTO: '35863389'
-      NACIMIENTO: '1986-09-12'
-      NOMBRE: Maria
-      NUMERO: '9693'
       SERVER_HOST: server
     image: client:latest
     networks:
@@ -111,25 +91,20 @@ services:
     - source: ./client/config.yaml
       target: /config.yaml
       type: bind
-    - source: .data/
-      target: /data
+    - source: .data/agency-4.csv
+      target: /data/agency-4.csv
       type: bind
   client5:
     build: ./client
     container_name: client5
     depends_on:
     - server
-    entrypoint: /bin/sh -c 'unzip -o data/dataset.zip agency-5.csv -d data/ && /client'
+    entrypoint: /client
     environment:
-      APELLIDO: Rinaldi
       BETS_FILE: /data/agency-5.csv
       CLIENT_ID: '5'
       CLIENT_LOG_LEVEL: DEBUG
       CONFIG_FILE: /config.yaml
-      DOCUMENTO: '22384247'
-      NACIMIENTO: '1956-12-12'
-      NOMBRE: Pablo
-      NUMERO: '7138'
       SERVER_HOST: server
     image: client:latest
     networks:
@@ -138,8 +113,8 @@ services:
     - source: ./client/config.yaml
       target: /config.yaml
       type: bind
-    - source: .data/
-      target: /data
+    - source: .data/agency-5.csv
+      target: /data/agency-5.csv
       type: bind
   server:
     build: ./server

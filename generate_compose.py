@@ -93,7 +93,7 @@ def config_clients(compose, number_of_clients):
                 "BETS_FILE": f"/data/agency-{i}.csv"
             },
             "networks": ["testing_net"],
-            "entrypoint": f"/bin/sh -c 'unzip -o data/dataset.zip agency-{i}.csv -d data/ && /client'", # extrae agency-{i}.csv y lo guarda en /data/
+            "entrypoint": "/client",
             "volumes": [
                 {
                     "type": "bind",
@@ -101,8 +101,8 @@ def config_clients(compose, number_of_clients):
                     "target": "/config.yaml"
                 },
                 {"type": "bind", 
-                 "source": ".data/", 
-                 "target": "/data"
+                 "source":  f".data/agency-{i}.csv", 
+                 "target":  f"/data/agency-{i}.csv",
                 }
             ]
         }
