@@ -122,12 +122,12 @@ func (c *Client) Close() {
 // CreateBetsFromCSV Lee el archivo CSV y crea una lista de apuestas
 func CreateBetsFromCSV(config ClientConfig) []*Bet {
 	file, err := os.Open(config.BetsFile)
+	var bets []*Bet
 	if err != nil {
 		log.Errorf("action: read_csv_file | result: fail | client_id: %v | error: %v", config.ID, err)
-		return nil
+		return bets
 	}
 	defer file.Close()
-	var bets []*Bet
 
 	scanner := bufio.NewScanner(file)
 
