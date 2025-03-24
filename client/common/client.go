@@ -78,88 +78,6 @@ func (c *Client) StartClient() {
 	c.Close()
 }
 
-func (c *Client) getWinners() {
-	err := SendMessage(c.conn, Message(GET_WINNERS).ToString())
-
-	if err != nil {
-		log.Errorf("action: send_message | result: fail | client_id: %v | error: %v", c.config.ID, err)
-		c.Close()
-	}
-
-	log.Infof("action: consulta_ganadores | result: in_progress | agencia: %v", c.config.ID)
-
-	msg, err := ReceiveMessage(c.conn)
-
-	if err != nil {
-		log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v", c.config.ID, err)
-		c.Close()
-	}
-
-	log.Infof("action: receive_message | result: success | client_id: %v | msg: %v", c.config.ID, msg)
-
-	msgType := NewMessage(msg)
-
-	switch msgType {
-	case WINNERS:
-		winners := GetWinners(msg)
-		log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v", winners.Size())
-	default:
-		log.Errorf("action: consulta_ganadores | result: fail | agencia: %v",
-			c.config.ID,
-		)
-	}
-}
-
-func (c *Client) notifyBetsSent() {
-	err := SendMessage(c.conn, Message(BETS_SENT).ToString())
-
-	if err != nil {
-		log.Errorf("action: send_message | result: fail | client_id: %v | error: %v", c.config.ID, err)
-		c.Close()
-	}
-
-	log.Infof("action: apuestas_enviadas | result: success | client_id: %v | cantidad: %v", c.config.ID, len(c.bets))
-}
-
-func (c *Client) sendBets(batches []*BetsInBatches) {
-	for _, batch := range batches {
-
-		err := SendMessage(c.conn, batch.Serialize())
-
-		if err != nil {
-			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v", c.config.ID, err)
-			c.Close()
-		}
-
-		msg, err := ReceiveMessage(c.conn)
-
-		if err != nil {
-			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v", c.config.ID, err)
-			c.Close()
-		}
-
-		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v", c.config.ID, msg)
-
-		msgType := NewMessage(msg)
-
-		switch msgType {
-		case SUCCESS:
-			log.Infof("action: apuesta_enviada | result: success | agencia: %v | cantidad: %v",
-				c.config.ID,
-				batch.Size(),
-			)
-		case SERVER_SHUTDOWN:
-			c.Close()
-		default:
-			log.Errorf("action: apuesta_enviada | result: fail | agencia: %v | cantidad: %v",
-				c.config.ID,
-				batch.Size(),
-			)
-		}
-	}
-
-}
-
 // Close gracefully shuts down the client by closing the socket connection.
 func (c *Client) Close() {
 	log.Infof("action: shutdown | result: in_progress | client_id: %v", c.config.ID)
@@ -222,4 +140,89 @@ func CreateBetsFromCSV(config ClientConfig) []*Bet {
 	}
 	log.Infof("action: read_csv_file | result: success | client_id: %v | cantidad: %v", config.ID, len(bets))
 	return bets
+}
+
+// getWinners asks the server for the winners and logs the result
+func (c *Client) getWinners() {
+	err := SendMessage(c.conn, Message(GET_WINNERS).ToString())
+
+	if err != nil {
+		log.Errorf("action: send_message | result: fail | client_id: %v | error: %v", c.config.ID, err)
+		c.Close()
+	}
+
+	log.Infof("action: consulta_ganadores | result: in_progress | agencia: %v", c.config.ID)
+
+	msg, err := ReceiveMessage(c.conn)
+
+	if err != nil {
+		log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v", c.config.ID, err)
+		c.Close()
+	}
+
+	log.Infof("action: receive_message | result: success | client_id: %v | msg: %v", c.config.ID, msg)
+
+	msgType := NewMessage(msg)
+
+	switch msgType {
+	case WINNERS:
+		winners := GetWinners(msg)
+		log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v", winners.Size())
+	default:
+		log.Errorf("action: consulta_ganadores | result: fail | agencia: %v",
+			c.config.ID,
+		)
+	}
+}
+
+// notifyBetsSent notifies the server that all bets were sent
+func (c *Client) notifyBetsSent() {
+	err := SendMessage(c.conn, Message(BETS_SENT).ToString())
+
+	if err != nil {
+		log.Errorf("action: send_message | result: fail | client_id: %v | error: %v", c.config.ID, err)
+		c.Close()
+	}
+
+	log.Infof("action: apuestas_enviadas | result: success | client_id: %v | cantidad: %v", c.config.ID, len(c.bets))
+}
+
+// sendBets sends the bets to the server in batches
+func (c *Client) sendBets(batches []*BetsInBatches) {
+	for _, batch := range batches {
+
+		err := SendMessage(c.conn, batch.Serialize())
+
+		if err != nil {
+			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v", c.config.ID, err)
+			c.Close()
+		}
+
+		msg, err := ReceiveMessage(c.conn)
+
+		if err != nil {
+			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v", c.config.ID, err)
+			c.Close()
+		}
+
+		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v", c.config.ID, msg)
+
+		msgType := NewMessage(msg)
+
+		switch msgType {
+		case SUCCESS:
+			log.Infof("action: apuesta_enviada | result: success | agencia: %v | cantidad: %v",
+				c.config.ID,
+				batch.Size(),
+			)
+		case SERVER_SHUTDOWN:
+			c.Close()
+		default:
+			log.Errorf("action: apuesta_enviada | result: fail | agencia: %v | cantidad: %v",
+				c.config.ID,
+				batch.Size(),
+			)
+		}
+	}
+
 }
