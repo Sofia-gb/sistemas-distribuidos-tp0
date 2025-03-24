@@ -10,12 +10,18 @@ class Message(Enum):
     UNKNOWN = "UNKNOWN"
     BETS_SENT = "BETS_SENT"
     GET_WINNERS = "GET_WINNERS"
+    WINNERS = "WINNERS"
 
     @staticmethod
     def from_string(msg: str):
         msg = msg.strip()  
         return Message.__members__.get(msg, Message.UNKNOWN)
-
+    
+    def to_string(self, *dnis):
+        if self == Message.WINNERS:
+            return f"{self.value}:{dnis.join(',')}"
+        return self.value
+    
 
 def send_message(socket, msg):
     """Ensures the complete sending of a message (avoiding short-write)."""

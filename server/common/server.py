@@ -39,7 +39,7 @@ class Server:
 
         for client_sock in self._clients_sockets:
             try:
-                send_message(client_sock, Message.SERVER_SHUTDOWN.value)
+                send_message(client_sock, Message.SERVER_SHUTDOWN.to_string())
                 addr = client_sock.getpeername()
                 logging.info(f"action: send_shutdown_message | result: success | ip: {addr[0]}")
                 logging.info(f"action: disconnect_client | result: in_progress | ip: {addr[0]}")
@@ -97,10 +97,10 @@ class Server:
                     bets = Bet.deserialize_bets(msg)
                     store_bets(bets)
                     logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
-                    send_message(client_sock, Message.SUCCESS.value)
+                    send_message(client_sock, Message.SUCCESS.to_string())
                 except ValueError as e:
                     logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")
-                    send_message(client_sock, Message.FAIL.value)
+                    send_message(client_sock, Message.FAIL.to_string())
                 except OSError as e:
                     logging.error(f"action: send_message | result: fail | error: {e.strerror}")
                 
