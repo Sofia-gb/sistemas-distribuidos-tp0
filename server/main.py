@@ -42,9 +42,6 @@ def graceful_shutdown(signal, frame):
 
     server.close()
 
-    logging.info("Server shut down gracefully.")
-    sys.exit(0)
-
 
 def main():
     config_params = initialize_config()

@@ -4,6 +4,7 @@ import sys
 from common.communication_protocol import *
 from common.utils import *
 
+EXIT_CODE = 0
 
 class Server:
     def __init__(self, port, listen_backlog):
@@ -61,6 +62,7 @@ class Server:
             logging.error(f"action: close_server_socket | result: fail | error: {e.strerror}")
   
         logging.info("action: shutdown | result: success")
+        sys.exit(EXIT_CODE)
 
     def __handle_client_connection(self, client_sock):
         """
