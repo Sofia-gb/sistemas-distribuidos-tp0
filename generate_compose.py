@@ -125,7 +125,7 @@ def config_networks(compose):
     }
 
 
-def config_server(compose):
+def config_server(compose, number_of_clients):
     """ Configures the server in the compose file. """
 
     compose["services"]["server"] = {
@@ -136,7 +136,8 @@ def config_server(compose):
             "environment": {
                 "PYTHONUNBUFFERED": "1",
                 "SERVER_LOG_LEVEL": "DEBUG",
-                "CONFIG_FILE": "/config.ini"
+                "CONFIG_FILE": "/config.ini",
+                "TOTAL_AGENCIES": str(number_of_clients),
 
             },
             "networks": ["testing_net"],
@@ -154,7 +155,7 @@ def config_services(compose, number_of_clients):
     """ Configures the services in the compose file. This includes the server and the clients. """
 
     compose["services"] = {}
-    config_server(compose)
+    config_server(compose, number_of_clients)
     config_clients(compose, number_of_clients)
 
 

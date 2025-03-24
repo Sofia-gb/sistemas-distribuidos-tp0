@@ -124,6 +124,7 @@ services:
       CONFIG_FILE: /config.ini
       PYTHONUNBUFFERED: '1'
       SERVER_LOG_LEVEL: DEBUG
+      TOTAL_AGENCIES: '5'
     image: server:latest
     networks:
     - testing_net
