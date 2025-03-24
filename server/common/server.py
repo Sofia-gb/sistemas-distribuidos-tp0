@@ -66,7 +66,7 @@ class Server:
         logging.info("action: shutdown | result: success")
         sys.exit(EXIT_CODE)
 
-    def get_winners(self):
+    def __get_winners(self):
         """ Get winners from bets """
         bets = load_bets()
         winners = {}
@@ -86,12 +86,43 @@ class Server:
         client socket will also be closed
         """
 
+        self.__receive_bets(client_sock)
+
+        if len(self.waiting_agencies) == self.total_agencies:
+            logging.info("action: sorteo | result: success")
+            winners = self.__get_winners()
+            self.__notify_winners(winners)
+            self.waiting_agencies = {}
+            self.winners = {}
+            logging.info(f"action: all_winners_sent | result: success")
+
+    def __notify_winners(self, winners):
+        """ Sends to agency N the winners of agency N """
+        for agency, socket in self.waiting_agencies.items():
+            dni_winners = winners.get(agency, [])
+            try:
+                msg = receive_message(socket)
+                logging.info(f'action: receive_message | result: success | agency: {agency} | msg: {msg}')
+                msg_type = Message.from_string(msg)
+                if msg_type == Message.GET_WINNERS:
+                    try:                        
+                        send_message(socket, Message.WINNERS.to_string(dni_winners))
+                        logging.info(f"action: winners_sent | result: success | agency: {agency} | cantidad: {len(dni_winners)}")
+                    except OSError as e:
+                        logging.error(f"action: send_message | result: fail | error: {e.strerror}")
+                socket.close()
+                self._clients_sockets.remove(socket)
+            except OSError as e:
+                logging.error(f"action: receive_message | result: fail | error: {e.strerror}")
+
+    def __receive_bets(self, client_sock):
+        """
+        Receive bets from a client until the agency sends a CLIENT_SHUTDOWN message or a BETS_SENT message
+        """
         addr = client_sock.getpeername()
 
         while True:
-
             try:
-                
                 msg = receive_message(client_sock)
                 
                 logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
@@ -105,53 +136,32 @@ class Server:
                     except OSError as e:
                         logging.error(f"action: disconnect_client | result: fail | ip: {addr[0]} | error: {e.strerror}")
                     finally:
-                        return
+                        break
                     
                 if msg_type == Message.BETS_SENT:
                     break
-                    
-                
-                try:
-                    bets = Bet.deserialize_bets(msg)
-                    if len(bets) > 0 and bets[0].agency not in self.waiting_agencies:
-                        agency = bets[0].agency
-                        self.waiting_agencies[agency] = client_sock
-                    store_bets(bets)
-                    logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
-                    send_message(client_sock, Message.SUCCESS.to_string())
-                except ValueError as e:
-                    logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")
-                    send_message(client_sock, Message.FAIL.to_string())
-                except OSError as e:
-                    logging.error(f"action: send_message | result: fail | error: {e.strerror}")
+                                  
+                self.__store_bets(client_sock, msg)
                 
             except OSError as e:
                 logging.error(f"action: receive_message | result: fail | error: {e.strerror}")
                 break
 
-        if len(self.waiting_agencies) == self.total_agencies:
-            logging.info("action: sorteo | result: success")
-            winners = self.get_winners()
-            for agency, socket in self.waiting_agencies.items():
-                dni_winners = winners.get(agency, [])
-                try:
-                    msg = receive_message(socket)
-                    logging.info(f'action: receive_message | result: success | agency: {agency} | msg: {msg}')
-                    msg_type = Message.from_string(msg)
-                    if msg_type == Message.GET_WINNERS:
-                        try:                        
-                            send_message(socket, Message.WINNERS.to_string(dni_winners))
-                            logging.info(f"action: winners_sent | result: success | agency: {agency} | cantidad: {len(dni_winners)}")
-                        except OSError as e:
-                            logging.error(f"action: send_message | result: fail | error: {e.strerror}")
-                    socket.close()
-                    self._clients_sockets.remove(socket)
-                except OSError as e:
-                    logging.error(f"action: receive_message | result: fail | error: {e.strerror}")
-
-            self.waiting_agencies = {}
-            self.winners = {}
-            logging.info(f"action: all_winners_sent | result: success")
+    def __store_bets(self, client_sock, msg):
+        """ Stores bets in the storage file and notifies the client whether the operation was successful or not """
+        try:
+            bets = Bet.deserialize_bets(msg)
+            if len(bets) > 0 and bets[0].agency not in self.waiting_agencies:
+                agency = bets[0].agency
+                self.waiting_agencies[agency] = client_sock
+            store_bets(bets)
+            logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
+            send_message(client_sock, Message.SUCCESS.to_string())
+        except ValueError as e:
+            logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")
+            send_message(client_sock, Message.FAIL.to_string())
+        except OSError as e:
+            logging.error(f"action: send_message | result: fail | error: {e.strerror}")
 
     def __accept_new_connection(self):
         """
