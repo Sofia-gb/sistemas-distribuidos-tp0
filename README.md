@@ -383,11 +383,11 @@ También se puede utilizar el flag `-t int` para especificar los segundos que se
 
 #### Explicación
 
-Cuando el cliente recibe `SIGTERM`, se ejecuta `client.Close()` en una goroutine. Esto permite que el cliente realice el proceso de cierre antes de terminar. Durante el cierre, el cliente procede primero a avisarle al servidor que se está cerrado mediante el mensaje `CLIENT_SHUTDOWN`, para luego cerrar la conexión.
+Cuando el cliente recibe `SIGTERM`, se ejecuta la función `GracefulShutdown(client *common.Client)`. Esto permite que el cliente realice el proceso de cierre antes de terminar, a través del método `Close()`. Durante el cierre, el cliente procede primero a avisarle al servidor que se está cerrado mediante el mensaje `CLIENT_SHUTDOWN`, para luego cerrar la conexión con el mismo.
 
 Durante la ejecución del cliente, se crean sockets para cada mensaje enviado. Si el servidor responde con el mensaje `SERVER_SHUTDOWN`, el cliente también cierra su conexión.
     
-Cuando el servidor recibe la signal `SIGTERM`, le avisa a los clientes conectados acerca del proceso de cierre enviándoles el mensaje `SERVER_SHUTDOWN`. Luego cierra todas las conexiones abiertas con los clientes. Por último, se cierra el socket del servidor.
+Cuando el servidor recibe la signal `SIGTERM`, se ejecuta la función `graceful_shutdown`. En ésta se invoca el método `close()` en el cual el servidor le avisa a los clientes conectados acerca del proceso de cierre enviándoles el mensaje `SERVER_SHUTDOWN`. Luego, cierra todas las conexiones abiertas con los clientes. Por último, se cierra el socket del servidor.
 
 Si durante el manejo de una conexión el servidor recibe `CLIENT_SHUTDOWN`, cierra el socket asociado y lo elimina de la lista de conexiones abiertas.
 

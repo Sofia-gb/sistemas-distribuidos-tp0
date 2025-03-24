@@ -101,6 +101,13 @@ func PrintConfig(v *viper.Viper) {
 	)
 }
 
+// GracefulShutdown Gracefully shutdowns the client. This function is called when
+// the client receives a SIGTERM signal and it closes the client connection.
+func GracefulShutdown(client *common.Client) {
+	log.Info("Received SIGTERM. Shutting down client gracefully...")
+	client.Close()
+}
+
 func main() {
 	v, err := InitConfig()
 	if err != nil {
@@ -133,9 +140,6 @@ func main() {
 	}()
 
 	<-sigs
-	log.Info("Received SIGTERM. Shutting down client gracefully...")
 
-	client.Close()
-
-	log.Info("Client shut down gracefully.")
+	GracefulShutdown(client)
 }

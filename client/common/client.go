@@ -13,6 +13,11 @@ import (
 
 var log = logging.MustGetLogger("log")
 
+const (
+	ExitSuccess = 0
+	ExitFailure = 1
+)
+
 // ClientConfig Configuration used by the client
 type ClientConfig struct {
 	ID             string
@@ -52,6 +57,7 @@ func (c *Client) createClientSocket() error {
 			c.config.ID,
 			err,
 		)
+		os.Exit(ExitFailure)
 	}
 	c.conn = conn
 	return nil
@@ -98,6 +104,7 @@ func (c *Client) StartClient() {
 
 // Close gracefully shuts down the client by closing the socket connection.
 func (c *Client) Close() {
+	log.Infof("action: shutdown | result: in_progress | client_id: %v", c.config.ID)
 	log.Infof("action: close_connection | result: in_progress | client_id: %v", c.config.ID)
 	if c.conn != nil {
 		err := SendMessage(c.conn, Message(CLIENT_SHUTDOWN).ToString())
@@ -116,8 +123,9 @@ func (c *Client) Close() {
 			log.Infof("action: close_connection | result: success | client_id: %v", c.config.ID)
 		}
 	}
+	log.Infof("action: shutdown | result: success | client_id: %v", c.config.ID)
 	time.Sleep(200 * time.Millisecond)
-	os.Exit(0)
+	os.Exit(ExitSuccess)
 }
 
 // CreateBetsFromCSV Lee el archivo CSV y crea una lista de apuestas
