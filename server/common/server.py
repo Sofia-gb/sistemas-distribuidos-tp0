@@ -74,7 +74,7 @@ class Server:
             if has_won(bet):
                 if bet.agency not in winners:
                     winners[bet.agency] = []
-                winners[bet.agency].append(bet.dni)
+                winners[bet.agency].append(bet.document)
         return winners
 
 
