@@ -8,6 +8,8 @@ class Message(Enum):
     SERVER_SHUTDOWN = "SERVER_SHUTDOWN"
     CLIENT_SHUTDOWN = "CLIENT_SHUTDOWN"
     UNKNOWN = "UNKNOWN"
+    BETS_SENT = "BETS_SENT"
+    GET_WINNERS = "GET_WINNERS"
 
     @staticmethod
     def from_string(msg: str):

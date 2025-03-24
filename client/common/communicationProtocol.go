@@ -48,6 +48,8 @@ const (
 	FAIL
 	SERVER_SHUTDOWN
 	CLIENT_SHUTDOWN
+	BETS_SENT
+	GET_WINNERS
 	UNKNOWN
 )
 
@@ -62,6 +64,10 @@ func (r Message) ToString() string {
 		return "SERVER_SHUTDOWN"
 	case CLIENT_SHUTDOWN:
 		return "CLIENT_SHUTDOWN"
+	case BETS_SENT:
+		return "BETS_SENT"
+	case GET_WINNERS:
+		return "GET_WINNERS"
 	default:
 		return "UNKNOWN"
 	}
@@ -78,6 +84,10 @@ func NewMessage(s string) Message {
 		return SERVER_SHUTDOWN
 	case "CLIENT_SHUTDOWN\n":
 		return CLIENT_SHUTDOWN
+	case "BETS_SENT\n":
+		return BETS_SENT
+	case "GET_WINNERS\n":
+		return GET_WINNERS
 	default:
 		return UNKNOWN
 	}
