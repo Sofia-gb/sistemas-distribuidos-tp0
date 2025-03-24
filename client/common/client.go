@@ -115,6 +115,7 @@ func (c *Client) StartClient() {
 		return
 	}
 
+	log.Infof("action: apuestas_enviadas | result: success | client_id: %v | cantidad: %v", c.config.ID, len(c.bets))
 	err = SendMessage(c.conn, Message(GET_WINNERS).ToString())
 
 	if err != nil {
@@ -122,6 +123,8 @@ func (c *Client) StartClient() {
 		c.Close()
 		return
 	}
+
+	log.Infof("action: consulta_ganadores | result: in_progress | agencia: %v", c.config.ID)
 
 	msg, err := ReceiveMessage(c.conn)
 
