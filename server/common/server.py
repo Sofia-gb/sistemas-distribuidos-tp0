@@ -105,29 +105,31 @@ class Server:
 
         logging.info("action: sorteo | result: success")
         winners = self.__get_winners()
-        self.__notify_winners(winners)
+        self.__notify_winners(winners, client_sock)
         with self._lock:
             self._agencies_waiting = {}
         logging.info(f"action: all_winners_sent | result: success")
 
-    def __notify_winners(self, winners):
+    def __notify_winners(self, winners, socket):
         """ Sends to agency N the winners of agency N """
-        for agency, socket in self._agencies_waiting.items():
-            dni_winners = winners.get(agency, [])
-            try:
-                msg = receive_message(socket)
-                logging.info(f'action: receive_message | result: success | agency: {agency} | msg: {msg}')
-                msg_type = Message.from_string(msg)
-                if msg_type == Message.GET_WINNERS:
-                    try:                        
-                        send_message(socket, Message.WINNERS.to_string(dni_winners))
-                        logging.info(f"action: winners_sent | result: success | agency: {agency} | cantidad: {len(dni_winners)}")
-                    except OSError as e:
-                        logging.error(f"action: send_message | result: fail | error: {e.strerror}")
-                socket.close()
-                self._clients_sockets.remove(socket)
-            except OSError as e:
-                logging.error(f"action: receive_message | result: fail | error: {e.strerror}")
+        #for agency, socket in self._agencies_waiting.items():
+        with self._lock:
+            agency = self._agencies_waiting[socket]
+        dni_winners = winners.get(agency, [])
+        try:
+            msg = receive_message(socket)
+            logging.info(f'action: receive_message | result: success | agency: {agency} | msg: {msg}')
+            msg_type = Message.from_string(msg)
+            if msg_type == Message.GET_WINNERS:
+                try:                        
+                    send_message(socket, Message.WINNERS.to_string(dni_winners))
+                    logging.info(f"action: winners_sent | result: success | agency: {agency} | cantidad: {len(dni_winners)}")
+                except OSError as e:
+                    logging.error(f"action: send_message | result: fail | error: {e.strerror}")
+            socket.close()
+            self._clients_sockets.remove(socket)
+        except OSError as e:
+            logging.error(f"action: receive_message | result: fail | error: {e.strerror}")
 
     def __receive_bets(self, client_sock):
         """
@@ -169,7 +171,7 @@ class Server:
             with self._lock:
                 if len(bets) > 0 and bets[0].agency not in self._agencies_waiting:
                     agency = bets[0].agency
-                    self._agencies_waiting[agency] = client_sock
+                    self._agencies_waiting[client_sock] = agency
                 store_bets(bets)
             logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
             send_message(client_sock, Message.SUCCESS.to_string())
