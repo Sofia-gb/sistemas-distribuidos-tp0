@@ -17,8 +17,9 @@ class Message(Enum):
         msg = msg.strip()  
         return Message.__members__.get(msg, Message.UNKNOWN)
     
-    def to_string(self, *dnis):
+    def to_string(self, *args):
         if self == Message.WINNERS:
+            dnis = args[0]
             return f"{self.value}:{dnis.join(',')}"
         return self.value
     
