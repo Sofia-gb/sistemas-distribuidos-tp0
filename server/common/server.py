@@ -13,8 +13,8 @@ class Server:
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
         self._clients_sockets = []
-        self.total_agencies = total_agencies
-        self.agencies_waiting = {}
+        self._total_agencies = total_agencies
+        self._agencies_waiting = {}
 
     def run(self):
         """
@@ -88,17 +88,16 @@ class Server:
 
         self.__receive_bets(client_sock)
 
-        if len(self.agencies_waiting) == self.total_agencies:
+        if len(self._agencies_waiting) == self._total_agencies:
             logging.info("action: sorteo | result: success")
             winners = self.__get_winners()
             self.__notify_winners(winners)
-            self.agencies_waiting = {}
-            self.winners = {}
+            self._agencies_waiting = {}
             logging.info(f"action: all_winners_sent | result: success")
 
     def __notify_winners(self, winners):
         """ Sends to agency N the winners of agency N """
-        for agency, socket in self.agencies_waiting.items():
+        for agency, socket in self._agencies_waiting.items():
             dni_winners = winners.get(agency, [])
             try:
                 msg = receive_message(socket)
@@ -151,9 +150,9 @@ class Server:
         """ Stores bets in the storage file and notifies the client whether the operation was successful or not """
         try:
             bets = Bet.deserialize_bets(msg)
-            if len(bets) > 0 and bets[0].agency not in self.agencies_waiting:
+            if len(bets) > 0 and bets[0].agency not in self._agencies_waiting:
                 agency = bets[0].agency
-                self.agencies_waiting[agency] = client_sock
+                self._agencies_waiting[agency] = client_sock
             store_bets(bets)
             logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
             send_message(client_sock, Message.SUCCESS.to_string())
