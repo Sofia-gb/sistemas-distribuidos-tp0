@@ -3,6 +3,7 @@ import logging
 import sys
 from common.communication_protocol import *
 from common.utils import *
+import threading
 
 EXIT_CODE = 0
 
@@ -13,8 +14,11 @@ class Server:
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
         self._clients_sockets = []
-        self.total_agencies = total_agencies
-        self.agencies_waiting = {}
+        # self._total_agencies = total_agencies
+        self._agencies_waiting = {}
+        self._lock = threading.Lock()
+        self._clients_threads = []
+        self.barrier = threading.Barrier(total_agencies)
 
     def run(self):
         """
@@ -25,12 +29,12 @@ class Server:
         finishes, servers starts to accept new connections again
         """
 
-        # TODO: Modify this program to handle signal to graceful shutdown
-        # the server
         while True:
             client_sock = self.__accept_new_connection()
             self._clients_sockets.append(client_sock)
-            self.__handle_client_connection(client_sock)
+            client_thread = threading.Thread(target=self.__handle_client_connection, args=(client_sock,))
+            client_thread.start()
+            self._clients_threads.append(client_thread)
 
     def close(self):
         """
@@ -62,13 +66,17 @@ class Server:
 
         except OSError as e:
             logging.error(f"action: close_server_socket | result: fail | error: {e.strerror}")
-  
+
+        for thread in self.client_threads:
+            thread.join()
+            
         logging.info("action: shutdown | result: success")
         sys.exit(EXIT_CODE)
 
     def __get_winners(self):
         """ Get winners from bets """
-        bets = load_bets()
+        with self._lock:
+            bets = load_bets()
         winners = {}
         for bet in bets:
             if has_won(bet):
@@ -88,17 +96,23 @@ class Server:
 
         self.__receive_bets(client_sock)
 
-        if len(self.agencies_waiting) == self.total_agencies:
-            logging.info("action: sorteo | result: success")
-            winners = self.__get_winners()
-            self.__notify_winners(winners)
-            self.agencies_waiting = {}
-            self.winners = {}
-            logging.info(f"action: all_winners_sent | result: success")
+        try:
+            self.barrier.wait() 
+
+        except threading.BrokenBarrierError:
+            logging.error("action: sorteo | result: fail | reason: barrier broken")
+            return
+
+        logging.info("action: sorteo | result: success")
+        winners = self.__get_winners()
+        self.__notify_winners(winners)
+        with self._lock:
+            self._agencies_waiting = {}
+        logging.info(f"action: all_winners_sent | result: success")
 
     def __notify_winners(self, winners):
         """ Sends to agency N the winners of agency N """
-        for agency, socket in self.agencies_waiting.items():
+        for agency, socket in self._agencies_waiting.items():
             dni_winners = winners.get(agency, [])
             try:
                 msg = receive_message(socket)
@@ -132,7 +146,8 @@ class Server:
                         logging.info(f"action: disconnect_client | result: in_progress | ip: {addr[0]}")
                         client_sock.close()
                         logging.info(f"action: disconnect_client | result: success | ip: {addr[0]}")
-                        self._clients_sockets.remove(client_sock)
+                        with self._lock:
+                            self._clients_sockets.remove(client_sock)
                     except OSError as e:
                         logging.error(f"action: disconnect_client | result: fail | ip: {addr[0]} | error: {e.strerror}")
                     finally:
@@ -151,10 +166,11 @@ class Server:
         """ Stores bets in the storage file and notifies the client whether the operation was successful or not """
         try:
             bets = Bet.deserialize_bets(msg)
-            if len(bets) > 0 and bets[0].agency not in self.agencies_waiting:
-                agency = bets[0].agency
-                self.agencies_waiting[agency] = client_sock
-            store_bets(bets)
+            with self._lock:
+                if len(bets) > 0 and bets[0].agency not in self._agencies_waiting:
+                    agency = bets[0].agency
+                    self._agencies_waiting[agency] = client_sock
+                store_bets(bets)
             logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
             send_message(client_sock, Message.SUCCESS.to_string())
         except ValueError as e:
