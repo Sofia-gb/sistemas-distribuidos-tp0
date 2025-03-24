@@ -105,7 +105,6 @@ class Server:
         logging.info("action: sorteo | result: success")
         winners = self.__get_winners(client_sock)
         self.__notify_winners(winners, client_sock)
-        logging.info(f"action: all_winners_sent | result: success")
 
     def __notify_winners(self, dni_winners, socket):
         """ Sends to agency N the winners of agency N """
