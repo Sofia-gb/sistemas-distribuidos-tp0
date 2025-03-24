@@ -430,3 +430,15 @@ docker build -f ./server/Dockerfile -t server:latest .
 docker build -f ./client/Dockerfile -t client:latest .
 docker compose -f docker-compose-dev.yaml up -d
 ```
+
+Los archivos de las apuestas se encuentran descomprimidos en `.data/`. En el Docker Compose se agregó la configuración necesaria para montar el archivo `agency-{N}.csv` en el contenedor del cliente N y persistirlo por fuera de la imagen. La variable de entorno `BETS_FILE` tiene como valor la ruta para acceder al archivo correspondiente, dependiendo de cada agencia.
+
+Cuando se crea una agencia (cliente), se lee el archivo de sus apuestas y se crea una `Bet` por cada línea con datos válidos. La clase `Bet` es la misma que en el ejercicio anterior, con la diferencia de que ahora el cliente se guarda un arreglo de apuestas en lugar de solo una.
+
+En `StarClient()` se envían conjuntos de máximo `batch.maxAmount` apuestas, limitados solo en el caso en que el paquete supere 8kB. Para ello se utiliza la clase `BetsInBatches` que representa una colección de apuestas y la función `CreateBetsInBatches` que crea un arreglo de `BetsInBatches`. 
+
+La clase `BetsInBatches` convierte a string las apuestas con `bet.Serialize()` creada en el ejercicio 5 y las junta una tras otra, separadas por `;`. Este es el mensaje que se envía al servidor.
+
+Luego de enviar un conjunto de apuestas, el cliente espera la respuesta del servidor para poder enviar el siguiente grupo. Cuando termina de mandar todas las apuestas, le avisa al servidor que terminó y cierra la conexión.
+
+Por otro lado, una vez que el servidor acepta una conexión, recibe las `BetsInBatches` de la agencia dada. Procesa las apuestas y las almacena. Responde con `SUCCESS` si todas las apuestas del batch fueron procesadas correctamente o con `FAIL` si hubo error con alguna. Luego, procede a recibir el siguiente batch. Finaliza y cierra la conexión con ese cliente cuando este último le informa que ha terminado de enviar apuestas.
