@@ -70,7 +70,6 @@ func (c *Client) StartClient() {
 	if err != nil {
 		log.Errorf("action: send_message | result: fail | client_id: %v | error: %v", c.config.ID, err)
 		c.Close()
-		return
 	}
 
 	msg, err := ReceiveMessage(c.conn)
