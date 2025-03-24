@@ -72,9 +72,9 @@ class Server:
         winners = {}
         for bet in bets:
             if has_won(bet):
-                if bet.agency_id not in winners:
-                    winners[bet.agency_id] = []
-                winners[bet.agency_id].append(bet.dni)
+                if bet.agency not in winners:
+                    winners[bet.agency] = []
+                winners[bet.agency].append(bet.dni)
         return winners
 
 
@@ -113,8 +113,8 @@ class Server:
                 
                 try:
                     bets = Bet.deserialize_bets(msg)
-                    if len(bets) > 0 and bets[0].agency_id not in self.waiting_agencies:
-                        agency = bets[0].agency_id
+                    if len(bets) > 0 and bets[0].agency not in self.waiting_agencies:
+                        agency = bets[0].agency
                         self.waiting_agencies[agency] = client_sock
                     store_bets(bets)
                     logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
