@@ -20,7 +20,7 @@ class Message(Enum):
     def to_string(self, *args):
         if self == Message.WINNERS:
             dnis = args[0]
-            return f"{self.value}:{dnis.join(',')}"
+            return f"{self.value}:{','.join(dnis)}"
         return self.value
     
 
