@@ -14,11 +14,10 @@ class Server:
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
         self._clients_sockets = []
-        # self._total_agencies = total_agencies
         self._agencies_waiting = {}
         self._lock = threading.Lock()
         self._clients_threads = []
-        self.barrier = threading.Barrier(total_agencies)
+        self._barrier_bets_received = threading.Barrier(total_agencies)
 
     def run(self):
         """
@@ -97,7 +96,7 @@ class Server:
         self.__receive_bets(client_sock)
 
         try:
-            self.barrier.wait() 
+            self._barrier_bets_received.wait() 
 
         except threading.BrokenBarrierError:
             logging.error("action: sorteo | result: fail | reason: barrier broken")
@@ -106,13 +105,10 @@ class Server:
         logging.info("action: sorteo | result: success")
         winners = self.__get_winners()
         self.__notify_winners(winners, client_sock)
-        with self._lock:
-            self._agencies_waiting = {}
         logging.info(f"action: all_winners_sent | result: success")
 
     def __notify_winners(self, winners, socket):
         """ Sends to agency N the winners of agency N """
-        #for agency, socket in self._agencies_waiting.items():
         with self._lock:
             agency = self._agencies_waiting[socket]
         dni_winners = winners.get(agency, [])
@@ -172,6 +168,7 @@ class Server:
                 if len(bets) > 0 and bets[0].agency not in self._agencies_waiting:
                     agency = bets[0].agency
                     self._agencies_waiting[client_sock] = agency
+                    threading.current_thread().name = "Thread-" + str(agency)
                 store_bets(bets)
             logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
             send_message(client_sock, Message.SUCCESS.to_string())
