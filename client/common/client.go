@@ -86,14 +86,14 @@ func (c *Client) StartClient() {
 
 		switch msgType {
 		case SUCCESS:
-			log.Infof("action: apuesta_enviada | result: success | agency: %v | batch_size: %v",
+			log.Infof("action: apuesta_enviada | result: success | agencia: %v | cantidad: %v",
 				c.config.ID,
 				batch.Size(),
 			)
 		case SERVER_SHUTDOWN:
 			c.Close()
 		default:
-			log.Errorf("action: apuesta_enviada | result: fail | agency: %v | batch_size: %v",
+			log.Errorf("action: apuesta_enviada | result: fail | agencia: %v | cantidad: %v",
 				c.config.ID,
 				batch.Size(),
 			)
