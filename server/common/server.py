@@ -7,12 +7,14 @@ from common.utils import *
 EXIT_CODE = 0
 
 class Server:
-    def __init__(self, port, listen_backlog):
+    def __init__(self, port, listen_backlog, total_agencies):
         # Initialize server socket
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
         self._clients_sockets = []
+        self.total_agencies = total_agencies
+        self.waiting_agencies = {}
 
     def run(self):
         """
@@ -64,6 +66,18 @@ class Server:
         logging.info("action: shutdown | result: success")
         sys.exit(EXIT_CODE)
 
+    def get_winners(self):
+        """ Get winners from bets """
+        bets = load_bets()
+        winners = {}
+        for bet in bets:
+            if has_won(bet):
+                if bet.agency_id not in winners:
+                    winners[bet.agency_id] = []
+                winners[bet.agency_id].append(bet.dni)
+        return winners
+
+
     def __handle_client_connection(self, client_sock):
         """
         Read message from a specific client socket and closes the socket
@@ -92,9 +106,16 @@ class Server:
                         logging.error(f"action: disconnect_client | result: fail | ip: {addr[0]} | error: {e.strerror}")
                     finally:
                         return
+                    
+                if msg_type == Message.BETS_SENT:
+                    break
+                    
                 
                 try:
                     bets = Bet.deserialize_bets(msg)
+                    if len(bets) > 0 and bets[0].agency_id not in self.waiting_agencies:
+                        agency = bets[0].agency_id
+                        self.waiting_agencies[agency] = client_sock
                     store_bets(bets)
                     logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
                     send_message(client_sock, Message.SUCCESS.to_string())
@@ -107,9 +128,31 @@ class Server:
             except OSError as e:
                 logging.error(f"action: receive_message | result: fail | error: {e.strerror}")
                 break
-            
-        client_sock.close()
-        self._clients_sockets.remove(client_sock)
+
+        if len(self.waiting_agencies) == self.total_agencies:
+            logging.info("action: sorteo | result: success")
+            winners = self.get_winners()
+            for agency, dni_winners in winners.items():
+                socket = self.waiting_agencies[agency]
+                try:
+                    msg = receive_message(socket)
+                    logging.info(f'action: receive_message | result: success | agency: {agency} | msg: {msg}')
+                    msg_type = Message.from_string(msg)
+                    if msg_type == Message.GET_WINNERS:
+                        try:                        
+                            send_message(socket, Message.WINNERS.to_string(dni_winners))
+                            logging.info(f"action: winners_sent | result: success | agency: {agency} | cantidad: {len(dni_winners)}")
+                        except OSError as e:
+                            logging.error(f"action: send_message | result: fail | error: {e.strerror}")
+                    socket.close()
+                    self._clients_sockets.remove(socket)
+                except OSError as e:
+                    logging.error(f"action: receive_message | result: fail | error: {e.strerror}")
+
+            self.waiting_agencies = {}
+            self.winners = {}
+            logging.info(f"action: all_winners_sent | result: success")
+            self.close()
 
     def __accept_new_connection(self):
         """
@@ -124,3 +167,4 @@ class Server:
         c, addr = self._server_socket.accept()
         logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
         return c
+
