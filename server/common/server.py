@@ -72,16 +72,15 @@ class Server:
         logging.info("action: shutdown | result: success")
         sys.exit(EXIT_CODE)
 
-    def __get_winners(self):
+    def __get_winners(self, client_sock):
         """ Get winners from bets """
         with self._lock:
+            agency = self._agencies_waiting[client_sock]
             bets = load_bets()
-        winners = {}
+        winners = []
         for bet in bets:
-            if has_won(bet):
-                if bet.agency not in winners:
-                    winners[bet.agency] = []
-                winners[bet.agency].append(bet.document)
+            if bet.agency == agency and has_won(bet):
+                winners.append(bet.document)
         return winners
 
 
@@ -103,15 +102,14 @@ class Server:
             return
 
         logging.info("action: sorteo | result: success")
-        winners = self.__get_winners()
+        winners = self.__get_winners(client_sock)
         self.__notify_winners(winners, client_sock)
         logging.info(f"action: all_winners_sent | result: success")
 
-    def __notify_winners(self, winners, socket):
+    def __notify_winners(self, dni_winners, socket):
         """ Sends to agency N the winners of agency N """
         with self._lock:
             agency = self._agencies_waiting[socket]
-        dni_winners = winners.get(agency, [])
         try:
             msg = receive_message(socket)
             logging.info(f'action: receive_message | result: success | agency: {agency} | msg: {msg}')
