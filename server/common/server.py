@@ -132,8 +132,8 @@ class Server:
         if len(self.waiting_agencies) == self.total_agencies:
             logging.info("action: sorteo | result: success")
             winners = self.get_winners()
-            for agency, dni_winners in winners.items():
-                socket = self.waiting_agencies[agency]
+            for agency, socket in self.waiting_agencies.items():
+                dni_winners = winners.get(agency, [])
                 try:
                     msg = receive_message(socket)
                     logging.info(f'action: receive_message | result: success | agency: {agency} | msg: {msg}')
