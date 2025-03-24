@@ -442,3 +442,39 @@ La clase `BetsInBatches` convierte a string las apuestas con `bet.Serialize()` c
 Luego de enviar un conjunto de apuestas, el cliente espera la respuesta del servidor para poder enviar el siguiente grupo. Cuando termina de mandar todas las apuestas, le avisa al servidor que terminó y cierra la conexión.
 
 Por otro lado, una vez que el servidor acepta una conexión, recibe las `BetsInBatches` de la agencia dada. Procesa las apuestas y las almacena. Responde con `SUCCESS` si todas las apuestas del batch fueron procesadas correctamente o con `FAIL` si hubo error con alguna. Luego, procede a recibir el siguiente batch. Finaliza y cierra la conexión con ese cliente cuando este último le informa que ha terminado de enviar apuestas.
+
+### Ejercicio 7
+
+Para ejecutar este ejercicio, pueden seguirse los siguientes pasos:
+
+```bash
+./generar-compose.sh docker-compose-dev.yaml 5
+docker build -f ./server/Dockerfile -t server:latest .
+docker build -f ./client/Dockerfile -t client:latest .
+docker compose -f docker-compose-dev.yaml up -d
+```
+
+A continuación detallo el procedimiento del cliente y el servidor.
+
+<u>Cliente</u>:
+
+1. Envía las apuestas de a batches, como en el ejercicio 6.
+2. Una vez que term in a de enviar todas las apuestas, le notifica esto al servidor con el mensaje `BETS_SENT`.
+3. Le pide al servidor los DNIs de los ganadores de su agencia a través del mensaje de `GET_WINNERS`.
+4. Espera la respuesta del servidor.
+5. Recibe el mensaje `WINNERS:DNI_1,DNI_2,...,DNI_N` con los DNIs ganadores de la agencia. La clase Winners sabe como deserializar este mensaje y guardar un arreglo con los DNIs.
+6. Log: `action: consulta_ganadores | result: success | cant_ganadores: {len(winners)}`.
+7. Cierra la conexión con el servidor.
+
+<u>Servidor</u>:
+
+1. Nuevos atributos: 
+	- `total_agencies` es la cantidad de agencias que enviarán apuestas. Depende de la variable de entorno `TOTAL_AGENCIES` del servidor en el Docker Compose, que coincide con la cantidad de clientes generados en el script.
+	- `agencies_waiting` es un diccionario que tiene por valor el id de la agencia y como valor el socket asociado a ese cliente.
+2. Acepta el intento de conexión de la agencia `i`.
+3. Recibe todas las apuestas de la agencia `i` hasta recibir el mensaje `BETS_SENT` (o `CLIENT_SHUTDOWN`). Guarda el socket en el diccionario `waiting_agencies`
+4. Repetir 2 y 3 hasta que todas las agencias hayan enviado sus apuestas.
+5. Log action: sorteo | result: success
+6. Sorteo: se cargan las apuestas (`load_bets()`) y se guarda las ganadoras (`has_won()`) en el diccionario `winners = {agency_id: [bet1.document, ..., betN.document]}`
+7. Para cada agencia de `agencies_waiting` de la cual se reciba el mensaje `GET_WINNERS`, se le envía los documentos ganadores de la misma. Se utiliza este diccionario y `winners` para evitar hacer un broadcast de todos los ganadores hacia todas las agencias, limitándonos a enviar únicamente los que corresponden a la agencia dada. `Message.WINNERS.to_string(dni_winners)` serializa el mensaje enviado a cada cliente.
+8. Luego de enviar los DNIs, se cierra la conexión con el cliente.
