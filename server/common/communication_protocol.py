@@ -40,7 +40,7 @@ def receive_message(socket):
     buffer = bytearray()
     
     while True:
-        chunk = socket.recv(MAX_PACKET_SIZE)
+        chunk = socket.recv(1)
         if not chunk:
             raise OSError("Connection broken")
         
