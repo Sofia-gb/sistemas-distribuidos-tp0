@@ -41,32 +41,33 @@ class Server:
         """
 
         logging.info("action: shutdown | result: in_progress")
+        with self._lock:
+            for client_sock in self._clients_sockets:
+                try:
+                    send_message(client_sock, Message.SERVER_SHUTDOWN.to_string())
+                    addr = client_sock.getpeername()
+                    logging.info(f"action: send_shutdown_message | result: success | ip: {addr[0]}")
+                    logging.info(f"action: disconnect_client | result: in_progress | ip: {addr[0]}")
 
-        for client_sock in self._clients_sockets:
-            try:
-                send_message(client_sock, Message.SERVER_SHUTDOWN.to_string())
-                addr = client_sock.getpeername()
-                logging.info(f"action: send_shutdown_message | result: success | ip: {addr[0]}")
-                logging.info(f"action: disconnect_client | result: in_progress | ip: {addr[0]}")
+                except OSError as e:
+                    logging.error(f"action: disconnect_client | result: fail | error: {e.strerror}")
 
-            except OSError as e:
-                logging.error(f"action: disconnect_client | result: fail | error: {e.strerror}")
+                finally:
+                    client_sock.close()
+                    logging.info(f"action: disconnect_client | result: success | ip: {addr[0]}")
 
-            finally:
-                client_sock.close()
-                logging.info(f"action: disconnect_client | result: success | ip: {addr[0]}")
-
-        self._clients_sockets = []
+            self._clients_sockets = []
 
         try:
             logging.info(f"action: close_server_socket | result: in_progress")
-            self._server_socket.close()
+            with self._lock:
+                self._server_socket.close()
             logging.info(f"action: close_server_socket | result: success")
 
         except OSError as e:
             logging.error(f"action: close_server_socket | result: fail | error: {e.strerror}")
 
-        for thread in self.client_threads:
+        for thread in self._clients_threads:
             thread.join()
             
         logging.info("action: shutdown | result: success")
