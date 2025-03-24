@@ -23,7 +23,7 @@ def send_message(socket, msg):
     while total_sent < len(msg):
         sent = socket.send(msg[total_sent:])
         if sent == 0:
-            raise RuntimeError("Connection broken")
+            raise OSError("Connection broken")
         total_sent += sent
 
 
@@ -34,7 +34,7 @@ def receive_message(socket):
     while True:
         chunk = socket.recv(MAX_PACKET_SIZE)
         if not chunk:
-            raise RuntimeError("Connection broken")
+            raise OSError("Connection broken")
         
         buffer.extend(chunk)
         if buffer[-1] == ord("\n"):  
