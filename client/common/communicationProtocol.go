@@ -3,6 +3,7 @@ package common
 import (
 	"fmt"
 	"net"
+	"strings"
 )
 
 // SendMessage ensures the complete sending of a message (avoiding short-write)
@@ -50,11 +51,12 @@ const (
 	CLIENT_SHUTDOWN
 	BETS_SENT
 	GET_WINNERS
+	WINNERS
 	UNKNOWN
 )
 
 // ToString casts Message to string.
-func (r Message) ToString() string {
+func (r Message) ToString(dnis ...string) string {
 	switch r {
 	case SUCCESS:
 		return "SUCCESS"
@@ -68,6 +70,8 @@ func (r Message) ToString() string {
 		return "BETS_SENT"
 	case GET_WINNERS:
 		return "GET_WINNERS"
+	case WINNERS:
+		return fmt.Sprintf("WINNERS:%s", strings.Join(dnis, ","))
 	default:
 		return "UNKNOWN"
 	}
@@ -75,6 +79,10 @@ func (r Message) ToString() string {
 
 // NewMessage creates a Message from a string.
 func NewMessage(s string) Message {
+	if strings.HasPrefix(s, "WINNERS:") {
+		return WINNERS
+	}
+
 	switch s {
 	case "SUCCESS\n":
 		return SUCCESS

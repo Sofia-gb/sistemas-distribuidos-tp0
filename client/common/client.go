@@ -75,14 +75,16 @@ func (c *Client) StartClient() {
 
 		if err != nil {
 			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v", c.config.ID, err)
-			break
+			c.Close()
+			return
 		}
 
 		msg, err := ReceiveMessage(c.conn)
 
 		if err != nil {
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v", c.config.ID, err)
-			break
+			c.Close()
+			return
 		}
 
 		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v", c.config.ID, msg)
@@ -104,6 +106,45 @@ func (c *Client) StartClient() {
 			)
 		}
 	}
+
+	err := SendMessage(c.conn, Message(BETS_SENT).ToString())
+
+	if err != nil {
+		log.Errorf("action: send_message | result: fail | client_id: %v | error: %v", c.config.ID, err)
+		c.Close()
+		return
+	}
+
+	err = SendMessage(c.conn, Message(GET_WINNERS).ToString())
+
+	if err != nil {
+		log.Errorf("action: send_message | result: fail | client_id: %v | error: %v", c.config.ID, err)
+		c.Close()
+		return
+	}
+
+	msg, err := ReceiveMessage(c.conn)
+
+	if err != nil {
+		log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v", c.config.ID, err)
+		c.Close()
+		return
+	}
+
+	log.Infof("action: receive_message | result: success | client_id: %v | msg: %v", c.config.ID, msg)
+
+	msgType := NewMessage(msg)
+
+	switch msgType {
+	case WINNERS:
+		winners := GetWinners(msg)
+		log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v", winners.Size())
+	default:
+		log.Errorf("action: consulta_ganadores | result: fail | agencia: %v",
+			c.config.ID,
+		)
+	}
+
 	c.Close()
 }
 
