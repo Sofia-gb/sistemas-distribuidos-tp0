@@ -454,6 +454,8 @@ docker build -f ./client/Dockerfile -t client:latest .
 docker compose -f docker-compose-dev.yaml up -d
 ```
 
+Con `docker logs clientN` se pueden observar los logs del cliente N, incluyendo la cantidad de ganadores de esa agencia. Por otro lado, con `docker logs server` se detallan los logs del servidor, entre los cuales podemos encontrar el que corresponse al sorteo.
+
 A continuación detallo el procedimiento del cliente y el servidor.
 
 <u>Cliente</u>:
