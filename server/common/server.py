@@ -152,7 +152,6 @@ class Server:
             self.waiting_agencies = {}
             self.winners = {}
             logging.info(f"action: all_winners_sent | result: success")
-            self.close()
 
     def __accept_new_connection(self):
         """
