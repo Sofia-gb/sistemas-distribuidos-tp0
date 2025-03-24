@@ -63,7 +63,7 @@ func (c *Client) createClientSocket() error {
 	return nil
 }
 
-// StartClient sends the bet to the server and waits for the response.
+// StartClient sends bets in batches to the server and waits for the response.
 func (c *Client) StartClient() {
 	c.createClientSocket()
 
@@ -162,6 +162,6 @@ func CreateBetsFromCSV(config ClientConfig) []*Bet {
 		bet := NewBet(config.ID, firstName, lastName, birthDate, dni, amount)
 		bets = append(bets, bet)
 	}
-	log.Infof("action: read_csv_file | result: success | client_id: %v | bets_amount: %v", config.ID, len(bets))
+	log.Infof("action: read_csv_file | result: success | client_id: %v | cantidad: %v", config.ID, len(bets))
 	return bets
 }
