@@ -13,7 +13,10 @@ func GetWinners(winnersData string) Winners {
 
 	parts := strings.SplitN(winnersData, ":", 2)
 	if len(parts) == 2 {
-		dnis = strings.Split(parts[1], ",")
+		dnis_data := strings.TrimSpace(parts[1])
+		if dnis_data != "" {
+			dnis = strings.Split(parts[1], ",")
+		}
 	}
 	return Winners{dnis}
 }
