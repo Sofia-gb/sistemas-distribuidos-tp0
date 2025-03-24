@@ -66,7 +66,12 @@ func (c *Client) createClientSocket() error {
 func (c *Client) StartClient() {
 	c.createClientSocket()
 
-	SendMessage(c.conn, c.bet.Serialize())
+	err := SendMessage(c.conn, c.bet.Serialize())
+	if err != nil {
+		log.Errorf("action: send_message | result: fail | client_id: %v | error: %v", c.config.ID, err)
+		c.Close()
+		return
+	}
 
 	msg, err := ReceiveMessage(c.conn)
 
