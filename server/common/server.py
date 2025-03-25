@@ -68,7 +68,9 @@ class Server:
             logging.error(f"action: close_server_socket | result: fail | error: {e.strerror}")
 
         for thread in self._clients_threads:
+            logging.info(f"action: join_thread | result: in_progress | thread: {thread.name}")
             thread.join()
+            logging.info(f"action: join_thread | result: success | thread: {thread.name}")
             
         logging.info("action: shutdown | result: success")
         sys.exit(EXIT_CODE)
