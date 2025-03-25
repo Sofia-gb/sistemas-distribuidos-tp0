@@ -480,3 +480,22 @@ A continuación detallo el procedimiento del cliente y el servidor.
 6. Sorteo: se cargan las apuestas (`load_bets()`) y se guarda las ganadoras (`has_won()`) en el diccionario `winners = {agency_id: [bet1.document, ..., betN.document]}`
 7. Para cada agencia de `agencies_waiting` de la cual se reciba el mensaje `GET_WINNERS`, se le envía los documentos ganadores de la misma. Se utiliza este diccionario y `winners` para evitar hacer un broadcast de todos los ganadores hacia todas las agencias, limitándonos a enviar únicamente los que corresponden a la agencia dada. `Message.WINNERS.to_string(dni_winners)` serializa el mensaje enviado a cada cliente.
 8. Luego de enviar los DNIs, se cierra la conexión con el cliente.
+
+### Ejercicio 8
+
+Para ejecutar este ejercicio, pueden seguirse los siguientes pasos:
+
+```bash
+./generar-compose.sh docker-compose-dev.yaml 5
+docker build -f ./server/Dockerfile -t server:latest .
+docker build -f ./client/Dockerfile -t client:latest .
+docker compose -f docker-compose-dev.yaml up -d
+```
+
+Si bien el GIL impide que los programas multithreading aprovechen al máximo los sistemas multiprocesador en ciertas situaciones, en la documentación se aclara que algunas operaciones bloqueantes o largas, como I/O (por ejemplo, leer los archivos de apuestas, almacenar las apuestas y cargarlas nuevamente), ocurren fuera del GIL. Debido a ello, decidí usar de todos modos threads para que el servidor pueda aceptar conexiones y procesar mensajes en paralelo. Cada vez que un cliente (agencia) intenta conectarse con el servidor, se crea un nuevo hilo que maneja esa conexión. El `Thread-i` recibe las apuestas de la agencia `i`, obtiene las ganadoras de la misma y le envía los DNIs de los ganadores.
+
+Nuevos atributos del servidor:
+- `self.agencies_waiting` reemplaza al diccionario agregado en el ejercicio anterior. En este caso, guarda el socket del cliente como clave y el id (número) de la agencia como valor.
+-  `self.lock = threading.Lock()` permite controlar el acceso concurrente a los recursos compartidos del servidor, como `self._clients_sockets` y `self._agencies_waiting`, y un correcto uso de la persistencia. El objetivo es evitar que múltiples hilos intenten acceder a estos recursos al mismo tiempo y resulten en datos inconsistentes.
+- `self.clients_threads` guarda referencias a los hilos (threads) activos con el objetivo de poder hacerles `join()`.
+ - `self.barrier_bets_received = threading.Barrier(total_agencies)` es una barrera que asegura que todas las agencias hayan finalizado de enviar sus apuestas para poder proceder con el sorteo.
