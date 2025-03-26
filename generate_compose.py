@@ -15,10 +15,9 @@ class ComposeGeneratorError(Enum):
     )
 
 
-def exit_with_error(error):
-    """ Exits the script with the given error message. """
+def report_error(error):
+    """ Writes the given error message to stderr. """
     sys.stderr.write(error.value + "\n")
-    sys.exit(1)
 
 
 def get_arguments():
@@ -27,20 +26,22 @@ def get_arguments():
     EXPECTED_PARAMS = 3  # generate_compose.py <archivo_salida> <n_clientes>
 
     if len(sys.argv) != EXPECTED_PARAMS:
-        exit_with_error(ComposeGeneratorError.ARGUMENT_COUNT_ERROR)
+        report_error(ComposeGeneratorError.ARGUMENT_COUNT_ERROR)
+        return
 
     number_of_clients = sys.argv[2]
     output_file = sys.argv[1]
 
     if not number_of_clients.isdigit() or int(number_of_clients) < 0:
-        exit_with_error(ComposeGeneratorError.NUMBER_OF_CLIENTS_ERROR)
+        report_error(ComposeGeneratorError.NUMBER_OF_CLIENTS_ERROR)
+        return
 
     return parse_arguments(output_file, number_of_clients)
 
 
 def parse_arguments(output_file, number_of_clients):
     """ Returns the output file and the number of clients as a tuple.
-    If the output file does not end with .yaml or .yml, the .yaml extension it is added. 
+    If the output file does not end with .yaml or .yml, the .yaml extension is added. 
     The number of clients is converted to an integer. """
 
     if not (output_file.endswith('.yaml') or output_file.endswith('.yml')):
@@ -51,7 +52,13 @@ def parse_arguments(output_file, number_of_clients):
 
 def config_clients(compose, number_of_clients):
     """ Configures the clients in the compose file. 
-     The number of clients is determined by the number_of_clients parameter. """
+     The number of clients is determined by the number_of_clients (int) parameter. 
+     CLIENT_ID is set to the client number.
+     SERVER_HOST is set to the server name.
+     CLIENT_LOG_LEVEL is set to DEBUG.
+     CONFIG_FILE is set to the client config file, config.yaml. The config file is mounted as a 
+     volume in the client container.
+     """
 
     for i in range(1, number_of_clients + 1):
         compose["services"][f"client{i}"] = {
@@ -95,7 +102,11 @@ def config_networks(compose):
 
 
 def config_server(compose):
-    """ Configures the server in the compose file. """
+    """ Configures the server in the compose file. 
+     SERVER_LOG_LEVEL is set to DEBUG.
+     CONFIG_FILE is set to the server config file, config.ini. The config file is mounted as a 
+     volume in the server container.
+    """
 
     compose["services"]["server"] = {
             "container_name": "server",
@@ -143,5 +154,7 @@ def generate_compose(output_file, number_of_clients):
 
 
 if __name__ == "__main__":
-    output_file, number_of_clients = get_arguments()
-    generate_compose(output_file, number_of_clients)
+    arguments = get_arguments()
+    if arguments is not None:
+        output_file, number_of_clients = arguments
+        generate_compose(output_file, number_of_clients)
