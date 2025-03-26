@@ -1,11 +1,8 @@
 import socket
 import logging
-import sys
 from common.communication_protocol import *
 from common.utils import *
 import threading
-
-EXIT_CODE = 0
 
 class Server:
     def __init__(self, port, listen_backlog, total_agencies):
@@ -29,11 +26,15 @@ class Server:
         """
 
         while True:
-            client_sock = self.__accept_new_connection()
-            self._clients_sockets.append(client_sock)
-            client_thread = threading.Thread(target=self.__handle_client_connection, args=(client_sock,))
-            client_thread.start()
-            self._clients_threads.append(client_thread)
+            try:
+                client_sock = self.__accept_new_connection()
+                self._clients_sockets.append(client_sock)
+                client_thread = threading.Thread(target=self.__handle_client_connection, args=(client_sock,))
+                client_thread.start()
+                self._clients_threads.append(client_thread)
+            except OSError as e:
+                logging.warning(f"action: accept_connections | result: fail | error: {e.strerror}")
+                break
 
     def close(self):
         """
@@ -47,14 +48,10 @@ class Server:
                     send_message(client_sock, Message.SERVER_SHUTDOWN.to_string())
                     addr = client_sock.getpeername()
                     logging.info(f"action: send_shutdown_message | result: success | ip: {addr[0]}")
-                    logging.info(f"action: disconnect_client | result: in_progress | ip: {addr[0]}")
-
                 except OSError as e:
-                    logging.error(f"action: disconnect_client | result: fail | error: {e.strerror}")
-
+                    logging.error(f"action: send_shutdown_message | result: fail | error: {e.strerror}")
                 finally:
-                    client_sock.close()
-                    logging.info(f"action: disconnect_client | result: success | ip: {addr[0]}")
+                    self.__disconnect_client(client_sock)
 
             self._clients_sockets = []
 
@@ -67,13 +64,14 @@ class Server:
         except OSError as e:
             logging.error(f"action: close_server_socket | result: fail | error: {e.strerror}")
 
-        for thread in self._clients_threads:
-            logging.info(f"action: join_thread | result: in_progress | thread: {thread.name}")
-            thread.join()
-            logging.info(f"action: join_thread | result: success | thread: {thread.name}")
+
+        with self._lock:
+            for thread in self._clients_threads:
+                logging.info(f"action: join_thread | result: in_progress | thread: {thread.name}")
+                thread.join()
+                logging.info(f"action: join_thread | result: success | thread: {thread.name}")
             
         logging.info("action: shutdown | result: success")
-        sys.exit(EXIT_CODE)
 
     def __get_winners(self, client_sock):
         """ Get winners from bets """
@@ -122,8 +120,8 @@ class Server:
                     logging.info(f"action: winners_sent | result: success | agency: {agency} | cantidad: {len(dni_winners)}")
                 except OSError as e:
                     logging.error(f"action: send_message | result: fail | error: {e.strerror}")
-            socket.close()
-            self._clients_sockets.remove(socket)
+            with self._lock:
+                self.__disconnect_client(socket)
         except OSError as e:
             logging.error(f"action: receive_message | result: fail | error: {e.strerror}")
 
@@ -131,25 +129,18 @@ class Server:
         """
         Receive bets from a client until the agency sends a CLIENT_SHUTDOWN message or a BETS_SENT message
         """
-        addr = client_sock.getpeername()
 
         while True:
             try:
+                addr = client_sock.getpeername()
                 msg = receive_message(client_sock)
                 
                 logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
                 msg_type = Message.from_string(msg)
                 if msg_type == Message.CLIENT_SHUTDOWN:
-                    try:
-                        logging.info(f"action: disconnect_client | result: in_progress | ip: {addr[0]}")
-                        client_sock.close()
-                        logging.info(f"action: disconnect_client | result: success | ip: {addr[0]}")
-                        with self._lock:
-                            self._clients_sockets.remove(client_sock)
-                    except OSError as e:
-                        logging.error(f"action: disconnect_client | result: fail | ip: {addr[0]} | error: {e.strerror}")
-                    finally:
-                        break
+                    with self._lock:
+                        self.__disconnect_client(client_sock)
+                    break
                     
                 if msg_type == Message.BETS_SENT:
                     break
@@ -192,3 +183,17 @@ class Server:
         logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
         return c
 
+    def __disconnect_client(self, client_sock):
+        """
+        Disconnect client socket. It closes the client socket and removes it from the
+        list of client sockets
+        """
+
+        try:
+            addr = client_sock.getpeername()
+            logging.info(f"action: disconnect_client | result: in_progress | ip: {addr[0]}")
+            client_sock.close()
+            logging.info(f"action: disconnect_client | result: success | ip: {addr[0]}")
+        finally:
+            if client_sock in self._clients_sockets:
+                self._clients_sockets.remove(client_sock)
