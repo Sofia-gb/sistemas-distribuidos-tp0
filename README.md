@@ -335,8 +335,19 @@ Elegí usar `bind mount` porque permite que los archivos de configuración pueda
 
 #### Ejecución
 
+1) 
+
+    ```bash
+    ./generar-compose.sh docker-compose-dev.yaml 1
+    docker build -f ./server/Dockerfile -t server:latest .
+    docker build -f ./client/Dockerfile -t client:latest .
+    docker compose -f docker-compose-dev.yaml up -d
+    ```
+
+2) 
+
 - Enviar mensaje default: `./validar-echo-server.sh`
-- Enviar mensaje personalizado: `./validar-echo-server.sh <mensaje>`
+- Enviar mensaje personalizado: `./validar-echo-server.sh <mensaje_sin_espacios>`
 
 #### Explicación
 
@@ -348,17 +359,13 @@ Elegí usar `bind mount` porque permite que los archivos de configuración pueda
 - `cut -d '=' -f2` extrae el valor del puerto, que se encuentra después del signo igual (=).
 - `tr -d '[:space:]'`elimina espacios alrededor del número de puerto extraído.
 
-**Obtener IP del servidor:** se usa `docker inspect` para extraerla.
-
-`SERVER_IP=$(docker inspect --format '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$SERVER_CONTAINER")`
-
 **Enviar mensaje al servidor y recibir respuesta:**
 
-`RESPONSE=$(docker run --network container:$SERVER_CONTAINER busybox sh -c "echo $MESSAGE | nc -w 2 $SERVER_IP $SERVER_PORT")`
+`RESPONSE=$(docker run --rm --network "$NETWORK_NAME" busybox sh -c "echo $MESSAGE | nc -w 2 $SERVER_CONTAINER $SERVER_PORT")`
 
 - `docker run` crea y ejecuta un nuevo contenedor.
 - `--rm` elimina el contenedor automáticamente una vez que el comando finaliza.
-- `--network container:$SERVER_CONTAINER` hace que el contenedor busybox utilice la misma red que el contenedor del servidor. Esto permite la comunicación sin necesidad de exponer puertos.
+- `--network "$NETWORK_NAME"` hace que el contenedor busybox utilice la misma red que el contenedor del servidor. Esto permite la comunicación sin necesidad de exponer puertos.
 - `busybox` usa una imagen mínima de Docker que tiene herramientas como netcat.
 - `sh` invoca la shell.
 - `-c` le pasa a la shell el comando que está entre comillas para que lo ejecute.
