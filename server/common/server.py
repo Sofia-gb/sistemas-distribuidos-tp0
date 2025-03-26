@@ -115,7 +115,7 @@ class Server:
             client_sock.close()
             logging.info(f"action: disconnect_client | result: success | ip: {addr[0]}")
         except OSError as e:
-            logging.error(f"action: disconnect_client | result: fail | ip: {addr[0]} | error: {e.strerror}")
+            logging.error(f"action: disconnect_client | result: fail | error: {e.strerror}")
         finally:
             if client_sock in self._clients_sockets:
                 self._clients_sockets.remove(client_sock)
