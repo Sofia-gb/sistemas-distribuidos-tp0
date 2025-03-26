@@ -41,15 +41,10 @@ class Server:
                 send_message(client_sock, Message.SERVER_SHUTDOWN.value)
                 addr = client_sock.getpeername()
                 logging.info(f"action: send_shutdown_message | result: success | ip: {addr[0]}")
-                logging.info(f"action: disconnect_client | result: in_progress | ip: {addr[0]}")
-
+                self.__disconnect_client(client_sock)
             except OSError as e:
-                logging.error(f"action: disconnect_client | result: fail | error: {e.strerror}")
-
-            finally:
-                client_sock.close()
-                logging.info(f"action: disconnect_client | result: success | ip: {addr[0]}")
-
+                logging.error(f"action: send_shutdown_message | result: fail | error: {e.strerror}")
+        
         self._clients_sockets = []
 
         try:
@@ -75,15 +70,8 @@ class Server:
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
             msg_type = Message.from_string(msg)
             if msg_type == Message.CLIENT_SHUTDOWN:
-                try:
-                    logging.info(f"action: disconnect_client | result: in_progress | ip: {addr[0]}")
-                    client_sock.close()
-                    logging.info(f"action: disconnect_client | result: success | ip: {addr[0]}")
-                    self._clients_sockets.remove(client_sock)
-                except OSError as e:
-                    logging.error(f"action: disconnect_client | result: fail | ip: {addr[0]} | error: {e.strerror}")
-                finally:
-                    return
+                self.__disconnect_client(client_sock)
+                return
             
             try:
                 bet = Bet.deserialize(msg)
@@ -99,8 +87,7 @@ class Server:
         except OSError as e:
             logging.error(f"action: receive_message | result: fail | error: {e.strerror}")
         finally:
-            client_sock.close()
-            self._clients_sockets.remove(client_sock)
+            self.__disconnect_client(client_sock)
 
     def __accept_new_connection(self):
         """
@@ -115,3 +102,20 @@ class Server:
         c, addr = self._server_socket.accept()
         logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
         return c
+
+    def __disconnect_client(self, client_sock):
+        """
+        Disconnect client socket. It closes the client socket and removes it from the
+        list of client sockets
+        """
+
+        try:
+            addr = client_sock.getpeername()
+            logging.info(f"action: disconnect_client | result: in_progress | ip: {addr[0]}")
+            client_sock.close()
+            logging.info(f"action: disconnect_client | result: success | ip: {addr[0]}")
+        except OSError as e:
+            logging.error(f"action: disconnect_client | result: fail | ip: {addr[0]} | error: {e.strerror}")
+        finally:
+            if client_sock in self._clients_sockets:
+                self._clients_sockets.remove(client_sock)
