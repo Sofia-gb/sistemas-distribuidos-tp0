@@ -128,11 +128,17 @@ func main() {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGTERM)
 
+	exitFlag := make(chan bool)
+
 	go func() {
 		client.StartClientLoop()
+		exitFlag <- true
 	}()
 
-	<-sigs
-
-	GracefulShutdown(client)
+	select {
+	case <-sigs:
+		GracefulShutdown(client)
+	case <-exitFlag:
+		// Nothing to do here
+	}
 }
