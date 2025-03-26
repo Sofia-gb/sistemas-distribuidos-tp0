@@ -413,7 +413,7 @@ En el caso de querer configurar menos o más de 5 agencias, es posible modificar
 
 Los datos de cada agencia (nombre, apellido, dni, fecha de nacimiento y número de la apuesta) son recibidos como variables de entorno del archivo de Docker Compose. En este se definen las agencias con datos aleatorios. El identificador de la agencia es el id del cliente. 
 
-Tanto en el cliente como en el servidor se utilizan las funciones de envío y recepción de mensajes definidas en `communicationProtocol.go` y `communication_protocol.py` para evitar los fenómenos _short read y short write_.
+Tanto en el cliente como en el servidor se utilizan las funciones de envío y recepción de mensajes definidas en `communicationProtocol.go` y `communication_protocol.py` para evitar los fenómenos _short read y short write_. Se lee de a un byte, hasta el delimitador de mensajes `\n`.
 
 El cliente sabe cómo serializar los datos de una apuesta para poder enviarlos al servidor, mientras que este último sabe cómo deserializarlos.
 - Cliente: La clase Bet define los datos de la apuesta y los serializa convirtiendo a string con el formato DATO=VALOR, separados por comas.

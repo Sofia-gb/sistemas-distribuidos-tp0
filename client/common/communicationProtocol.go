@@ -5,9 +5,12 @@ import (
 	"net"
 )
 
+const BYTES_TO_READ = 1
+const MESSAGE_DELIMITER = '\n'
+
 // SendMessage ensures the complete sending of a message (avoiding short-write)
 func SendMessage(conn net.Conn, msg string) error {
-	message := fmt.Sprintf("%s\n", msg)
+	message := fmt.Sprintf("%s%c", msg, MESSAGE_DELIMITER)
 	data := []byte(message)
 	totalSent := 0
 
@@ -23,21 +26,23 @@ func SendMessage(conn net.Conn, msg string) error {
 
 // ReceiveMessage ensures the complete reception of a message (avoiding short-read).
 func ReceiveMessage(conn net.Conn) (string, error) {
-	buffer := make([]byte, 1024)
-	totalRead := 0
+	var buffer []byte
 
 	for {
-		n, err := conn.Read(buffer[totalRead:])
+		byteChunk := make([]byte, BYTES_TO_READ)
+		bytesRead, err := conn.Read(byteChunk)
 		if err != nil {
 			return "", fmt.Errorf("error receiving message: %w", err)
 		}
 
-		totalRead += n
-		if buffer[totalRead-1] == '\n' {
+		buffer = append(buffer, byteChunk[:bytesRead]...)
+
+		if byteChunk[0] == MESSAGE_DELIMITER {
 			break
 		}
 	}
-	return string(buffer[:totalRead]), nil
+
+	return string(buffer[:len(buffer)-1]), nil
 }
 
 // Message defines different types of messages.
@@ -70,13 +75,13 @@ func (r Message) ToString() string {
 // NewMessage creates a Message from a string.
 func NewMessage(s string) Message {
 	switch s {
-	case "SUCCESS\n":
+	case "SUCCESS":
 		return SUCCESS
-	case "FAIL\n":
+	case "FAIL":
 		return FAIL
-	case "SERVER_SHUTDOWN\n":
+	case "SERVER_SHUTDOWN":
 		return SERVER_SHUTDOWN
-	case "CLIENT_SHUTDOWN\n":
+	case "CLIENT_SHUTDOWN":
 		return CLIENT_SHUTDOWN
 	default:
 		return UNKNOWN
