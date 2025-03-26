@@ -195,7 +195,7 @@ chmod +x generar-compose.sh
 
 El script de bash realizado primero valida que se le pasen los dos parámetros necesarios: el nombre del archivo de salida y la cantidad de clientes. Si no se pasan correctamente, se muestra un mensaje de error y se finaliza la ejecución. Caso contrario, se ejecuta el subscript de Python `generate_compose.py` pasándole los dos parámetros mencionados.
 
-El script de Python realiza nuevamente la validación de parámetros para evitar inconsistencias en el caso de que no sea invocado a través de `generar-compose.sh`. Luego, convierte el número de clientes a string y agrega la extensión .yaml al archivo de salida, en caso de ser necesario. Con estos datos, se procede a escribir el archivo dado.
+El script de Python realiza nuevamente la validación de parámetros para evitar inconsistencias en el caso de que no sea invocado a través de `generar-compose.sh`. Luego, convierte el número de clientes a entero y agrega la extensión .yaml al archivo de salida, en caso de ser necesario. Con estos datos, se procede a escribir el archivo dado.
 
 El contenido del archivo de Docker Compose resultante incluye:
 - Servicios: son los contenedores. Incluye el servidor y N clientes, donde N se refiere a la cantidad de clientes definida al ejecutar el script de bash. El `clientk` será identificado con el id `k`.
@@ -299,4 +299,4 @@ Casos de interés:
             image: server:latest
             networks:
             - testing_net
-    ```yaml
+    ```
