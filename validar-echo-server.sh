@@ -15,15 +15,7 @@ fi
 
 EXPECTED_RESPONSE="$MESSAGE"
 
-SERVER_IP=$(docker inspect \
-  --format '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$SERVER_CONTAINER")
-
-if [ -z "$SERVER_IP" ]; then
-    echo $FAIL_MESSAGE
-    exit $FAIL_CODE
-fi
-
-RESPONSE=$(docker run --rm --network container:$SERVER_CONTAINER busybox sh -c "echo $MESSAGE | nc -w 2 $SERVER_IP $SERVER_PORT")
+RESPONSE=$(docker run --rm --network "$NETWORK_NAME" busybox sh -c "echo $MESSAGE | nc -w 2 $SERVER_CONTAINER $SERVER_PORT")
 
 if [ "$RESPONSE" = "$EXPECTED_RESPONSE" ]; then
     echo $SUCCESS_MESSAGE

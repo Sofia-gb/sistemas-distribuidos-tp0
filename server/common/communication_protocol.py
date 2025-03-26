@@ -1,6 +1,7 @@
 from enum import Enum
 
-MAX_PACKET_SIZE = 8192
+BYTES_TO_READ = 1
+MESSAGE_DELIMITER = "\n"
 
 class Message(Enum):
     SUCCESS = "SUCCESS"
@@ -26,7 +27,7 @@ class Message(Enum):
 
 def send_message(socket, msg):
     """Ensures the complete sending of a message (avoiding short-write)."""
-    msg = f"{msg}\n".encode('utf-8') 
+    msg = f"{msg}{MESSAGE_DELIMITER}".encode('utf-8') 
     total_sent = 0
 
     while total_sent < len(msg):
@@ -41,12 +42,12 @@ def receive_message(socket):
     buffer = bytearray()
     
     while True:
-        chunk = socket.recv(1)
+        chunk = socket.recv(BYTES_TO_READ)
         if not chunk:
             raise OSError("Connection broken")
         
         buffer.extend(chunk)
-        if buffer[-1] == ord("\n"):  
+        if buffer[-1] == ord(MESSAGE_DELIMITER):  
             break
 
     return buffer.decode('utf-8').strip() 

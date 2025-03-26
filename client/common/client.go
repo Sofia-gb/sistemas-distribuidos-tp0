@@ -13,10 +13,7 @@ import (
 
 var log = logging.MustGetLogger("log")
 
-const (
-	ExitSuccess = 0
-	ExitFailure = 1
-)
+const SLEEP_TIME = 1000 * time.Millisecond
 
 // ClientConfig Configuration used by the client
 type ClientConfig struct {
@@ -57,7 +54,7 @@ func (c *Client) createClientSocket() error {
 			c.config.ID,
 			err,
 		)
-		os.Exit(ExitFailure)
+		return err
 	}
 	c.conn = conn
 	return nil
@@ -65,7 +62,10 @@ func (c *Client) createClientSocket() error {
 
 // StartClient sends bets in batches to the server and waits for the response.
 func (c *Client) StartClient() {
-	c.createClientSocket()
+	err := c.createClientSocket()
+	if err != nil {
+		return
+	}
 
 	batches := CreateBetsInBatches(c.bets, c.config.BatchMaxAmount)
 
@@ -100,46 +100,7 @@ func (c *Client) Close() {
 		}
 	}
 	log.Infof("action: shutdown | result: success | client_id: %v", c.config.ID)
-	time.Sleep(200 * time.Millisecond)
-	os.Exit(ExitSuccess)
-}
-
-// CreateBetsFromCSV Lee el archivo CSV y crea una lista de apuestas
-func CreateBetsFromCSV(config ClientConfig) []*Bet {
-	file, err := os.Open(config.BetsFile)
-	var bets []*Bet
-	if err != nil {
-		log.Errorf("action: read_csv_file | result: fail | client_id: %v | error: %v", config.ID, err)
-		return bets
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		betData := strings.Split(line, ",")
-
-		if len(betData) != 5 {
-			log.Warningf("action: parse_bet | result: fail | reason: incorrect format | line: %v", line)
-			continue
-		}
-
-		firstName := betData[0]
-		lastName := betData[1]
-		dni := betData[2]
-		birthDate := betData[3]
-		amount, err := strconv.Atoi(betData[4])
-		if err != nil {
-			log.Errorf("action: parse_bet_amount | result: fail | client_id: %v | error: %v", config.ID, err)
-			continue
-		}
-
-		bet := NewBet(config.ID, firstName, lastName, birthDate, dni, amount)
-		bets = append(bets, bet)
-	}
-	log.Infof("action: read_csv_file | result: success | client_id: %v | cantidad: %v", config.ID, len(bets))
-	return bets
+	time.Sleep(SLEEP_TIME)
 }
 
 // getWinners asks the server for the winners and logs the result
@@ -225,4 +186,52 @@ func (c *Client) sendBets(batches []*BetsInBatches) {
 		}
 	}
 
+}
+
+// CreateBetsFromCSV Lee el archivo CSV y crea una lista de apuestas
+func CreateBetsFromCSV(config ClientConfig) []*Bet {
+	file, err := os.Open(config.BetsFile)
+	var bets []*Bet
+	if err != nil {
+		log.Errorf("action: read_csv_file | result: fail | client_id: %v | error: %v", config.ID, err)
+		return bets
+	}
+	defer closeBetsFile(file)
+
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		betData := strings.Split(line, ",")
+
+		if len(betData) != 5 {
+			log.Warningf("action: parse_bet | result: fail | reason: incorrect format | line: %v", line)
+			continue
+		}
+
+		firstName := betData[0]
+		lastName := betData[1]
+		dni := betData[2]
+		birthDate := betData[3]
+		amount, err := strconv.Atoi(betData[4])
+		if err != nil {
+			log.Errorf("action: parse_bet_amount | result: fail | client_id: %v | error: %v", config.ID, err)
+			continue
+		}
+
+		bet := NewBet(config.ID, firstName, lastName, birthDate, dni, amount)
+		bets = append(bets, bet)
+	}
+	log.Infof("action: read_csv_file | result: success | client_id: %v | cantidad: %v", config.ID, len(bets))
+	return bets
+}
+
+// closeBetsFile Closes the bets file
+func closeBetsFile(file *os.File) {
+	err := file.Close()
+	if err != nil {
+		log.Errorf("action: close_csv | result: fail | error: %v", err)
+	} else {
+		log.Infof("action: close_csv | result: success")
+	}
 }
