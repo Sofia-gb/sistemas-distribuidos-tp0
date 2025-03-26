@@ -52,7 +52,13 @@ def parse_arguments(output_file, number_of_clients):
 
 def config_clients(compose, number_of_clients):
     """ Configures the clients in the compose file. 
-     The number of clients is determined by the number_of_clients (int) parameter. """
+     The number of clients is determined by the number_of_clients (int) parameter. 
+     CLIENT_ID is set to the client number.
+     SERVER_HOST is set to the server name.
+     CLIENT_LOG_LEVEL is set to DEBUG.
+     CONFIG_FILE is set to the client config file, config.yaml. The config file is mounted as a 
+     volume in the client container.
+     """
 
     for i in range(1, number_of_clients + 1):
         compose["services"][f"client{i}"] = {
@@ -96,7 +102,11 @@ def config_networks(compose):
 
 
 def config_server(compose):
-    """ Configures the server in the compose file. """
+    """ Configures the server in the compose file. 
+     SERVER_LOG_LEVEL is set to DEBUG.
+     CONFIG_FILE is set to the server config file, config.ini. The config file is mounted as a 
+     volume in the server container.
+    """
 
     compose["services"]["server"] = {
             "container_name": "server",
