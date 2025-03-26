@@ -2,18 +2,12 @@ package common
 
 import (
 	"net"
-	"os"
 	"time"
 
 	"github.com/op/go-logging"
 )
 
 var log = logging.MustGetLogger("log")
-
-const (
-	ExitSuccess = 0
-	ExitFailure = 1
-)
 
 // ClientConfig Configuration used by the client
 type ClientConfig struct {
@@ -56,7 +50,7 @@ func (c *Client) createClientSocket() error {
 			c.config.ID,
 			err,
 		)
-		os.Exit(ExitFailure)
+		return err
 	}
 	c.conn = conn
 	return nil
@@ -64,12 +58,17 @@ func (c *Client) createClientSocket() error {
 
 // StartClient sends the bet to the server and waits for the response.
 func (c *Client) StartClient() {
-	c.createClientSocket()
+	err := c.createClientSocket()
 
-	err := SendMessage(c.conn, c.bet.Serialize())
+	if err != nil {
+		return
+	}
+
+	err = SendMessage(c.conn, c.bet.Serialize())
 	if err != nil {
 		log.Errorf("action: send_message | result: fail | client_id: %v | error: %v", c.config.ID, err)
 		c.Close()
+		return
 	}
 
 	msg, err := ReceiveMessage(c.conn)
@@ -129,5 +128,4 @@ func (c *Client) Close() {
 		}
 	}
 	log.Infof("action: shutdown | result: success | client_id: %v", c.config.ID)
-	os.Exit(ExitSuccess)
 }
