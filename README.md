@@ -392,8 +392,8 @@ También se puede utilizar el flag `-t int` para especificar los segundos que se
 
 Cuando el cliente recibe `SIGTERM`, se ejecuta la función `GracefulShutdown(client *common.Client)`. Esto permite que el cliente realice el proceso de cierre antes de terminar, a través del método `Close()`. Durante el cierre, el cliente procede primero a avisarle al servidor que se está cerrado mediante el mensaje `CLIENT_SHUTDOWN`, para luego cerrar la conexión con el mismo.
 
-Durante la ejecución del cliente, se crean sockets para cada mensaje enviado. Si el servidor responde con el mensaje `SERVER_SHUTDOWN`, el cliente también cierra su conexión.
+Durante la ejecución del cliente, se crean sockets para cada mensaje enviado. Si el servidor responde con el mensaje `SERVER_SHUTDOWN`, el cliente también cierra su conexión. En el caso de que el servidor finalice después de que el cliente ya haya cerrado una conexión, cuando este último intente establecer una nueva conexión en la siguiente iteración, se atrapará el error y se saldrá del loop.
     
-Cuando el servidor recibe la signal `SIGTERM`, se ejecuta la función `graceful_shutdown`. En ésta se invoca el método `close()` en el cual el servidor le avisa a los clientes conectados acerca del proceso de cierre enviándoles el mensaje `SERVER_SHUTDOWN`. Luego, cierra todas las conexiones abiertas con los clientes. Por último, se cierra el socket del servidor.
+Cuando el servidor recibe la signal `SIGTERM`, se ejecuta la función `graceful_shutdown`. En ésta se invoca el método `close()` en el cual el servidor le avisa a los clientes conectados acerca del proceso de cierre enviándoles el mensaje `SERVER_SHUTDOWN`. Luego, cierra todas las conexiones abiertas con los clientes. Por último, se cierra el socket del servidor. Cuando no se pueda aceptar una conexión en `__accept_new_connection()`, se atrapará el error y finalizará el proceso del servidor.
 
 Si durante el manejo de una conexión el servidor recibe `CLIENT_SHUTDOWN`, cierra el socket asociado y lo elimina de la lista de conexiones abiertas.
