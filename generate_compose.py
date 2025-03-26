@@ -81,6 +81,7 @@ def config_clients(compose, number_of_clients):
      CLIENT_LOG_LEVEL is set to DEBUG.
      CONFIG_FILE is set to the client config file, config.yaml. The config file is mounted as a 
      volume in the client container.
+     NOMBRE, APELLIDO, DOCUMENTO, NACIMIENTO, and NUMERO are set to random values.
      """
 
     names = ["Santiago", "Lionel", "Maria", "Pablo", "Ana"]

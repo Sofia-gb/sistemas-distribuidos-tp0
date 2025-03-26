@@ -7,6 +7,15 @@ import time
 STORAGE_FILEPATH = "./bets.csv"
 """ Simulated winner number in the lottery contest. """
 LOTTERY_WINNER_NUMBER = 7574
+EXPECTED_BET_FIELDS = 6
+BET_FIELDS_DELIMITER = ","
+BET_VALUES_DELIMITER = "="
+AGENCY = "AGENCY"
+FIRST_NAME = "FIRST_NAME"
+LAST_NAME = "LAST_NAME"
+NUMBER = "NUMBER"
+BIRTH_DATE = "BIRTH_DATE"
+DNI = "DNI"
 
 
 """ A lottery bet registry. """
@@ -26,26 +35,31 @@ class Bet:
     
     @classmethod
     def deserialize(cls, data: list[str]):
-        fields = data.split(",")
+        """
+        Deserialize a bet from a string.
+        The string must have the following format:
+        "AGENCY=agency,FIRST_NAME=first_name,LAST_NAME=last_name,NUMBER=number,BIRTH_DATE=birth_date,DNI=dni"
+        """
+        fields = data.split(BET_FIELDS_DELIMITER)
         agency, first_name, last_name, number, birth_date, dni = None, None, None, None, None, None
 
-        if len(fields) != 6:
+        if len(fields) != EXPECTED_BET_FIELDS:
             raise ValueError("Invalid Bet format")
 
         for field in fields:
-            field_type, field_value = field.split("=")
+            field_type, field_value = field.split(BET_VALUES_DELIMITER)
 
-            if field_type == "AGENCY":
+            if field_type == AGENCY:
                 agency = field_value
-            elif field_type == "FIRST_NAME":
+            elif field_type == FIRST_NAME:
                 first_name = field_value
-            elif field_type == "LAST_NAME":
+            elif field_type == LAST_NAME:
                 last_name = field_value
-            elif field_type == "NUMBER":
+            elif field_type == NUMBER:
                 number = field_value
-            elif field_type == "BIRTH_DATE":
+            elif field_type == BIRTH_DATE:
                 birth_date = field_value
-            elif field_type == "DNI":
+            elif field_type == DNI:
                 dni = field_value
             else:
                 raise ValueError(f"Invalid Bet format: {data}")
