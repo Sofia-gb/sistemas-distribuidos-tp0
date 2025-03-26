@@ -41,10 +41,11 @@ class Server:
                 send_message(client_sock, Message.SERVER_SHUTDOWN.value)
                 addr = client_sock.getpeername()
                 logging.info(f"action: send_shutdown_message | result: success | ip: {addr[0]}")
-                self.__disconnect_client(client_sock)
             except OSError as e:
                 logging.error(f"action: send_shutdown_message | result: fail | error: {e.strerror}")
-        
+            finally: 
+                self.__disconnect_client(client_sock)
+
         self._clients_sockets = []
 
         try:
