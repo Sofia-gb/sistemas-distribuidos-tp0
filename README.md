@@ -461,7 +461,7 @@ A continuación detallo el procedimiento del cliente y el servidor.
 <u>Cliente</u>:
 
 1. Envía las apuestas de a batches, como en el ejercicio 6.
-2. Una vez que term in a de enviar todas las apuestas, le notifica esto al servidor con el mensaje `BETS_SENT`.
+2. Una vez que termina de enviar todas las apuestas, le notifica esto al servidor con el mensaje `BETS_SENT`.
 3. Le pide al servidor los DNIs de los ganadores de su agencia a través del mensaje de `GET_WINNERS`.
 4. Espera la respuesta del servidor.
 5. Recibe el mensaje `WINNERS:DNI_1,DNI_2,...,DNI_N` con los DNIs ganadores de la agencia. La clase Winners sabe como deserializar este mensaje y guardar un arreglo con los DNIs.
