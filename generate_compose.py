@@ -9,7 +9,8 @@ YEAR_LOW_BOUND = 1950
 YEAR_HIGH_BOUND = 2000
 BET_LOW_BOUND = 100
 BET_HIGH_BOUND = 10000
-
+NUMBER_OF_CLIENT_INDEX = 2
+OUTPUT_FILE_INDEX = 1
 
 class ComposeGeneratorError(Enum):
     """Represents the errors that can occur in the ComposeGenerator script."""
@@ -37,8 +38,8 @@ def get_arguments():
         report_error(ComposeGeneratorError.ARGUMENT_COUNT_ERROR)
         return
 
-    number_of_clients = sys.argv[2]
-    output_file = sys.argv[1]
+    number_of_clients = sys.argv[NUMBER_OF_CLIENT_INDEX]
+    output_file = sys.argv[OUTPUT_FILE_INDEX]
 
     if not number_of_clients.isdigit() or int(number_of_clients) < 0:
         report_error(ComposeGeneratorError.NUMBER_OF_CLIENTS_ERROR)
@@ -81,8 +82,8 @@ def config_clients(compose, number_of_clients):
      CLIENT_LOG_LEVEL is set to DEBUG.
      CONFIG_FILE is set to the client config file, config.yaml. The config file is mounted as a 
      volume in the client container.
-     NOMBRE, APELLIDO, DOCUMENTO, NACIMIENTO, and NUMERO are set to random values.
-     """
+     BETS_FILE is the path to the client bets file, agency-{i}.csv. The bets file is mounted as a
+     volume in the client container."""
 
     _names = ["Santiago", "Lionel", "Maria", "Pablo", "Ana"]
     _surnames = ["Lorca", "Rinaldi", "Belis", "Saez", "Romero"]

@@ -141,7 +141,7 @@ func CreateBetsFromCSV(config ClientConfig) []*Bet {
 		log.Errorf("action: read_csv_file | result: fail | client_id: %v | error: %v", config.ID, err)
 		return bets
 	}
-	defer file.Close()
+	defer closeBetsFile(file)
 
 	scanner := bufio.NewScanner(file)
 
@@ -169,4 +169,13 @@ func CreateBetsFromCSV(config ClientConfig) []*Bet {
 	}
 	log.Infof("action: read_csv_file | result: success | client_id: %v | cantidad: %v", config.ID, len(bets))
 	return bets
+}
+
+func closeBetsFile(file *os.File) {
+	err := file.Close()
+	if err != nil {
+		log.Errorf("action: close_csv | result: fail | error: %v", err)
+	} else {
+		log.Infof("action: close_csv | result: success")
+	}
 }
