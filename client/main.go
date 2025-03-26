@@ -135,10 +135,18 @@ func main() {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGTERM)
 
+	exitFlag := make(chan bool)
+
 	go func() {
-		<-sigs
-		GracefulShutdown(client)
+		client.StartClient()
+		exitFlag <- true
 	}()
-	client.StartClient()
+
+	select {
+	case <-sigs:
+		GracefulShutdown(client)
+	case <-exitFlag:
+		// Nothing to do here
+	}
 
 }
