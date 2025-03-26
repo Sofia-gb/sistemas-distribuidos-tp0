@@ -13,10 +13,7 @@ import (
 
 var log = logging.MustGetLogger("log")
 
-const (
-	ExitSuccess = 0
-	ExitFailure = 1
-)
+const SLEEP_TIME = 200 * time.Millisecond
 
 // ClientConfig Configuration used by the client
 type ClientConfig struct {
@@ -57,7 +54,7 @@ func (c *Client) createClientSocket() error {
 			c.config.ID,
 			err,
 		)
-		os.Exit(ExitFailure)
+		return err
 	}
 	c.conn = conn
 	return nil
@@ -65,7 +62,10 @@ func (c *Client) createClientSocket() error {
 
 // StartClient sends bets in batches to the server and waits for the response.
 func (c *Client) StartClient() {
-	c.createClientSocket()
+	err := c.createClientSocket()
+	if err != nil {
+		return
+	}
 
 	batches := CreateBetsInBatches(c.bets, c.config.BatchMaxAmount)
 
@@ -97,6 +97,7 @@ func (c *Client) StartClient() {
 			)
 		case SERVER_SHUTDOWN:
 			c.Close()
+			return
 		default:
 			log.Errorf("action: apuesta_enviada | result: fail | agencia: %v | cantidad: %v",
 				c.config.ID,
@@ -129,8 +130,7 @@ func (c *Client) Close() {
 		}
 	}
 	log.Infof("action: shutdown | result: success | client_id: %v", c.config.ID)
-	time.Sleep(200 * time.Millisecond)
-	os.Exit(ExitSuccess)
+	time.Sleep(SLEEP_TIME)
 }
 
 // CreateBetsFromCSV Lee el archivo CSV y crea una lista de apuestas

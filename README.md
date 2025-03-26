@@ -195,7 +195,7 @@ chmod +x generar-compose.sh
 
 El script de bash realizado primero valida que se le pasen los dos parámetros necesarios: el nombre del archivo de salida y la cantidad de clientes. Si no se pasan correctamente, se muestra un mensaje de error y se finaliza la ejecución. Caso contrario, se ejecuta el subscript de Python `generate_compose.py` pasándole los dos parámetros mencionados.
 
-El script de Python realiza nuevamente la validación de parámetros para evitar inconsistencias en el caso de que no sea invocado a través de `generar-compose.sh`. Luego, convierte el número de clientes a string y agrega la extensión .yaml al archivo de salida, en caso de ser necesario. Con estos datos, se procede a escribir el archivo dado.
+El script de Python realiza nuevamente la validación de parámetros para evitar inconsistencias en el caso de que no sea invocado a través de `generar-compose.sh`. Luego, convierte el número de clientes a entero y agrega la extensión .yaml al archivo de salida, en caso de ser necesario. Con estos datos, se procede a escribir el archivo dado.
 
 El contenido del archivo de Docker Compose resultante incluye:
 - Servicios: son los contenedores. Incluye el servidor y N clientes, donde N se refiere a la cantidad de clientes definida al ejecutar el script de bash. El `clientk` será identificado con el id `k`.
@@ -299,7 +299,7 @@ Casos de interés:
             image: server:latest
             networks:
             - testing_net
-    ```yaml
+    ```
 
 ### Ejercicio 2
 
@@ -335,8 +335,19 @@ Elegí usar `bind mount` porque permite que los archivos de configuración pueda
 
 #### Ejecución
 
+1) 
+
+    ```bash
+    ./generar-compose.sh docker-compose-dev.yaml 1
+    docker build -f ./server/Dockerfile -t server:latest .
+    docker build -f ./client/Dockerfile -t client:latest .
+    docker compose -f docker-compose-dev.yaml up -d
+    ```
+
+2) 
+
 - Enviar mensaje default: `./validar-echo-server.sh`
-- Enviar mensaje personalizado: `./validar-echo-server.sh <mensaje>`
+- Enviar mensaje personalizado: `./validar-echo-server.sh <mensaje_sin_espacios>`
 
 #### Explicación
 
@@ -348,17 +359,13 @@ Elegí usar `bind mount` porque permite que los archivos de configuración pueda
 - `cut -d '=' -f2` extrae el valor del puerto, que se encuentra después del signo igual (=).
 - `tr -d '[:space:]'`elimina espacios alrededor del número de puerto extraído.
 
-**Obtener IP del servidor:** se usa `docker inspect` para extraerla.
-
-`SERVER_IP=$(docker inspect --format '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$SERVER_CONTAINER")`
-
 **Enviar mensaje al servidor y recibir respuesta:**
 
-`RESPONSE=$(docker run --network container:$SERVER_CONTAINER busybox sh -c "echo $MESSAGE | nc -w 2 $SERVER_IP $SERVER_PORT")`
+`RESPONSE=$(docker run --rm --network "$NETWORK_NAME" busybox sh -c "echo $MESSAGE | nc -w 2 $SERVER_CONTAINER $SERVER_PORT")`
 
 - `docker run` crea y ejecuta un nuevo contenedor.
 - `--rm` elimina el contenedor automáticamente una vez que el comando finaliza.
-- `--network container:$SERVER_CONTAINER` hace que el contenedor busybox utilice la misma red que el contenedor del servidor. Esto permite la comunicación sin necesidad de exponer puertos.
+- `--network "$NETWORK_NAME"` hace que el contenedor busybox utilice la misma red que el contenedor del servidor. Esto permite la comunicación sin necesidad de exponer puertos.
 - `busybox` usa una imagen mínima de Docker que tiene herramientas como netcat.
 - `sh` invoca la shell.
 - `-c` le pasa a la shell el comando que está entre comillas para que lo ejecute.
@@ -385,9 +392,9 @@ También se puede utilizar el flag `-t int` para especificar los segundos que se
 
 Cuando el cliente recibe `SIGTERM`, se ejecuta la función `GracefulShutdown(client *common.Client)`. Esto permite que el cliente realice el proceso de cierre antes de terminar, a través del método `Close()`. Durante el cierre, el cliente procede primero a avisarle al servidor que se está cerrado mediante el mensaje `CLIENT_SHUTDOWN`, para luego cerrar la conexión con el mismo.
 
-Durante la ejecución del cliente, se crean sockets para cada mensaje enviado. Si el servidor responde con el mensaje `SERVER_SHUTDOWN`, el cliente también cierra su conexión.
+Durante la ejecución del cliente, se crean sockets para cada mensaje enviado. Si el servidor responde con el mensaje `SERVER_SHUTDOWN`, el cliente también cierra su conexión. En el caso de que el servidor finalice después de que el cliente ya haya cerrado una conexión, cuando este último intente establecer una nueva conexión en la siguiente iteración, se atrapará el error y se saldrá del loop.
     
-Cuando el servidor recibe la signal `SIGTERM`, se ejecuta la función `graceful_shutdown`. En ésta se invoca el método `close()` en el cual el servidor le avisa a los clientes conectados acerca del proceso de cierre enviándoles el mensaje `SERVER_SHUTDOWN`. Luego, cierra todas las conexiones abiertas con los clientes. Por último, se cierra el socket del servidor.
+Cuando el servidor recibe la signal `SIGTERM`, se ejecuta la función `graceful_shutdown`. En ésta se invoca el método `close()` en el cual el servidor le avisa a los clientes conectados acerca del proceso de cierre enviándoles el mensaje `SERVER_SHUTDOWN`. Luego, cierra todas las conexiones abiertas con los clientes. Por último, se cierra el socket del servidor. Cuando no se pueda aceptar una conexión en `__accept_new_connection()`, se atrapará el error y finalizará el proceso del servidor.
 
 Si durante el manejo de una conexión el servidor recibe `CLIENT_SHUTDOWN`, cierra el socket asociado y lo elimina de la lista de conexiones abiertas.
 
@@ -406,7 +413,7 @@ En el caso de querer configurar menos o más de 5 agencias, es posible modificar
 
 Los datos de cada agencia (nombre, apellido, dni, fecha de nacimiento y número de la apuesta) son recibidos como variables de entorno del archivo de Docker Compose. En este se definen las agencias con datos aleatorios. El identificador de la agencia es el id del cliente. 
 
-Tanto en el cliente como en el servidor se utilizan las funciones de envío y recepción de mensajes definidas en `communicationProtocol.go` y `communication_protocol.py` para evitar los fenómenos _short read y short write_.
+Tanto en el cliente como en el servidor se utilizan las funciones de envío y recepción de mensajes definidas en `communicationProtocol.go` y `communication_protocol.py` para evitar los fenómenos _short read y short write_. Se lee de a un byte, hasta el delimitador de mensajes `\n`.
 
 El cliente sabe cómo serializar los datos de una apuesta para poder enviarlos al servidor, mientras que este último sabe cómo deserializarlos.
 - Cliente: La clase Bet define los datos de la apuesta y los serializa convirtiendo a string con el formato DATO=VALOR, separados por comas.
