@@ -1,8 +1,5 @@
 import socket
 import logging
-import sys
-
-EXIT_CODE = 0
 
 class Server:
     def __init__(self, port, listen_backlog):
@@ -24,9 +21,13 @@ class Server:
         # TODO: Modify this program to handle signal to graceful shutdown
         # the server
         while True:
-            client_sock = self.__accept_new_connection()
-            self._clients_sockets.append(client_sock)
-            self.__handle_client_connection(client_sock)
+            try:
+                client_sock = self.__accept_new_connection()
+                self._clients_sockets.append(client_sock)
+                self.__handle_client_connection(client_sock)
+            except OSError as e:
+                logging.warning(f"action: accept_connections | result: fail | error: {e.strerror}")
+                break
 
     def close(self):
         """
@@ -61,7 +62,6 @@ class Server:
             logging.error(f"action: close_server_socket | result: fail | error: {e.strerror}")
   
         logging.info("action: shutdown | result: success")
-        sys.exit(EXIT_CODE)
 
     def __handle_client_connection(self, client_sock):
         """

@@ -4,18 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"net"
-	"os"
 	"time"
 
 	"github.com/op/go-logging"
 )
 
 var log = logging.MustGetLogger("log")
-
-const (
-	ExitSuccess = 0
-	ExitFailure = 1
-)
 
 // ClientConfig Configuration used by the client
 type ClientConfig struct {
@@ -51,7 +45,7 @@ func (c *Client) createClientSocket() error {
 			c.config.ID,
 			err,
 		)
-		os.Exit(ExitFailure)
+		return err
 	}
 	c.conn = conn
 	return nil
@@ -63,7 +57,11 @@ func (c *Client) StartClientLoop() {
 	// Messages if the message amount threshold has not been surpassed
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
 		// Create the connection the server in every loop iteration. Send an
-		c.createClientSocket()
+		err := c.createClientSocket()
+
+		if err != nil {
+			break
+		}
 
 		// TODO: Modify the send to avoid short-write
 		fmt.Fprintf(
@@ -80,7 +78,7 @@ func (c *Client) StartClientLoop() {
 				c.config.ID,
 				err,
 			)
-			return
+			break
 		}
 
 		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
@@ -90,7 +88,7 @@ func (c *Client) StartClientLoop() {
 
 		if msg == "SERVER_SHUTDOWN\n" {
 			c.Close()
-			return
+			break
 		}
 
 		// Wait a time between sending one message and the next one
@@ -122,5 +120,4 @@ func (c *Client) Close() {
 		}
 	}
 	log.Infof("action: shutdown | result: success | client_id: %v", c.config.ID)
-	os.Exit(ExitSuccess)
 }
