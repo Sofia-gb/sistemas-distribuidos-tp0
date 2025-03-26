@@ -435,7 +435,7 @@ Los archivos de las apuestas se encuentran descomprimidos en `.data/`. En el Doc
 
 Cuando se crea una agencia (cliente), se lee el archivo de sus apuestas y se crea una `Bet` por cada línea con datos válidos. La clase `Bet` es la misma que en el ejercicio anterior, con la diferencia de que ahora el cliente se guarda un arreglo de apuestas en lugar de solo una.
 
-En `StarClient()` se envían conjuntos de máximo `batch.maxAmount` apuestas, limitados solo en el caso en que el paquete supere 8kB. Para ello se utiliza la clase `BetsInBatches` que representa una colección de apuestas y la función `CreateBetsInBatches` que crea un arreglo de `BetsInBatches`. 
+En `StartClient()` se envían conjuntos de máximo `batch.maxAmount` apuestas, limitados solo en el caso en que el paquete supere 8kB. Para ello se utiliza la clase `BetsInBatches` que representa una colección de apuestas y la función `CreateBetsInBatches` que crea un arreglo de `BetsInBatches`. 
 
 La clase `BetsInBatches` convierte a string las apuestas con `bet.Serialize()` creada en el ejercicio 5 y las junta una tras otra, separadas por `;`. Este es el mensaje que se envía al servidor.
 
