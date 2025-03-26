@@ -136,10 +136,9 @@ func main() {
 	signal.Notify(sigs, syscall.SIGTERM)
 
 	go func() {
-		client.StartClient()
+		<-sigs
+		GracefulShutdown(client)
 	}()
+	client.StartClient()
 
-	<-sigs
-
-	GracefulShutdown(client)
 }
