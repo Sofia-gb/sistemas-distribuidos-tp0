@@ -13,7 +13,7 @@ import (
 
 var log = logging.MustGetLogger("log")
 
-const SLEEP_TIME = 200 * time.Millisecond
+const SLEEP_TIME = 1000 * time.Millisecond
 
 // ClientConfig Configuration used by the client
 type ClientConfig struct {
