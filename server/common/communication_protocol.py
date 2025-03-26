@@ -2,6 +2,7 @@ from enum import Enum
 
 BYTES_TO_READ = 1
 MESSAGE_DELIMITER = "\n"
+DNIS_DELIMITER = ","
 
 class Message(Enum):
     SUCCESS = "SUCCESS"
@@ -21,7 +22,7 @@ class Message(Enum):
     def to_string(self, *args):
         if self == Message.WINNERS:
             dnis = args[0]
-            return f"{self.value}:{','.join(dnis)}"
+            return f"{self.value}:{DNIS_DELIMITER.join(dnis)}"
         return self.value
     
 

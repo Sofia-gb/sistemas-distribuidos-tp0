@@ -102,10 +102,10 @@ class Server:
                         logging.info(f"action: winners_sent | result: success | agency: {agency} | cantidad: {len(dni_winners)}")
                     except OSError as e:
                         logging.error(f"action: send_message | result: fail | error: {e.strerror}")
-                socket.close()
-                self._clients_sockets.remove(socket)
             except OSError as e:
                 logging.error(f"action: receive_message | result: fail | error: {e.strerror}")
+            finally:
+                self.__disconnect_client(socket)
 
     def __receive_bets(self, client_sock):
         """
