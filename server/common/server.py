@@ -15,6 +15,7 @@ class Server:
         self._lock = threading.Lock()
         self._clients_threads = []
         self._barrier_bets_received = threading.Barrier(total_agencies)
+        self._total_agencies = total_agencies
 
     def run(self):
         """
@@ -24,54 +25,58 @@ class Server:
         communication with a client. After client with communucation
         finishes, servers starts to accept new connections again
         """
+        agencies = 0
 
-        while True:
+        while agencies < self._total_agencies:
             try:
                 client_sock = self.__accept_new_connection()
                 self._clients_sockets.append(client_sock)
                 client_thread = threading.Thread(target=self.__handle_client_connection, args=(client_sock,))
                 client_thread.start()
                 self._clients_threads.append(client_thread)
+                agencies += 1
             except OSError as e:
                 logging.warning(f"action: accept_connections | result: fail | error: {e.strerror}")
                 break
+            
+        self.__wait_for_clients_threads()
 
     def close(self):
         """
-        Close server socket and all client sockets
+        Close server socket, client sockets and 
         """
 
         logging.info("action: shutdown | result: in_progress")
-        with self._lock:
-            for client_sock in self._clients_sockets:
-                try:
-                    send_message(client_sock, Message.SERVER_SHUTDOWN.to_string())
-                    addr = client_sock.getpeername()
-                    logging.info(f"action: send_shutdown_message | result: success | ip: {addr[0]}")
-                except OSError as e:
-                    logging.error(f"action: send_shutdown_message | result: fail | error: {e.strerror}")
-                finally:
-                    self.__disconnect_client(client_sock)
+        for client_sock in self._clients_sockets:
+            try:
+                send_message(client_sock, Message.SERVER_SHUTDOWN.to_string())
+                addr = client_sock.getpeername()
+                logging.info(f"action: send_shutdown_message | result: success | ip: {addr[0]}")
+            except OSError as e:
+                logging.error(f"action: send_shutdown_message | result: fail | error: {e.strerror}")
+            finally:
+                self.__disconnect_client(client_sock)
 
-            self._clients_sockets = []
+        self._clients_sockets = []
 
         try:
             logging.info(f"action: close_server_socket | result: in_progress")
-            with self._lock:
-                self._server_socket.close()
+            self._server_socket.close()
             logging.info(f"action: close_server_socket | result: success")
 
         except OSError as e:
             logging.error(f"action: close_server_socket | result: fail | error: {e.strerror}")
 
-
-        with self._lock:
-            for thread in self._clients_threads:
-                logging.info(f"action: join_thread | result: in_progress | thread: {thread.name}")
-                thread.join()
-                logging.info(f"action: join_thread | result: success | thread: {thread.name}")
+        self.__wait_for_clients_threads()
             
         logging.info("action: shutdown | result: success")
+
+    def __wait_for_clients_threads(self):
+        for thread in self._clients_threads:
+            logging.info(f"action: join_thread | result: in_progress | thread: {thread.name}")
+            thread.join()
+            self._clients_threads.remove(thread)
+            logging.info(f"action: join_thread | result: success | thread: {thread.name}")
 
     def __get_winners(self, client_sock):
         """ Get winners from bets """
