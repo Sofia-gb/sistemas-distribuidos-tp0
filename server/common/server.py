@@ -10,19 +10,19 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
-        self._clients_sockets = []
-        self._agencies_waiting = {}
-        self._lock = multiprocessing.Lock()
         self._clients_processes = []
-        self._barrier_bets_received = multiprocessing.Barrier(total_agencies)
         self._total_agencies = total_agencies
+        self._barrier_bets_received = multiprocessing.Barrier(total_agencies)
+        self._clients_sockets = []
+        self._agency_waiting = None
+        self._lock = multiprocessing.Lock() 
 
     def run(self):
         """
-        Creates a new thread for each client connection. The thread will receive and send messages
+        Creates a new proces for each client connection. The proces will receive and send messages
         to the given agency, using a socket. 
         
-        The main thread will wait for all the threads to finish before closing the server
+        The main proces will wait for all the processes to finish before closing the server
         """
         agencies = 0
 
@@ -30,9 +30,9 @@ class Server:
             try:
                 client_sock = self.__accept_new_connection()
                 self._clients_sockets.append(client_sock)
-                client_thread = multiprocessing.Process(target=self.__handle_client_connection, args=(client_sock,))
-                client_thread.start()
-                self._clients_processes.append(client_thread)
+                client_process = multiprocessing.Process(target=self.__handle_client_connection, args=(client_sock,))
+                client_process.start()
+                self._clients_processes.append(client_process)
                 agencies += 1
             except OSError as e:
                 logging.warning(f"action: accept_connections | result: fail | error: {e.strerror}")
@@ -42,7 +42,7 @@ class Server:
 
     def close(self):
         """
-        Closes server socket and client sockets, and wait for all threads to finish.
+        Closes server socket and client sockets, and wait for all processes to finish.
         """
 
         logging.info("action: shutdown | result: in_progress")
@@ -71,17 +71,17 @@ class Server:
         logging.info("action: shutdown | result: success")
 
     def __wait_for_clients_processes(self):
-        """ Waits for all threads to finish. It will remove the threads from the list of threads """
-        for thread in self._clients_processes:
-            logging.info(f"action: join_thread | result: in_progress | thread: {thread.name}")
-            thread.join()
-            self._clients_processes.remove(thread)
-            logging.info(f"action: join_thread | result: success | thread: {thread.name}")
+        """ Waits for all processes to finish. It will remove the process from the list of processes """
+        for process in self._clients_processes:
+            logging.info(f"action: join_process | result: in_progress | process: {process.name}")
+            process.join()
+            self._clients_processes.remove(process)
+            logging.info(f"action: join_process | result: success | process: {process.name}")
 
     def __get_winners(self, client_sock):
-        """ Get winners from bets. Each thread will get the winners of the agency it is handling """
+        """ Get winners from bets. Each process will get the winners of the agency it is handling """
+        agency = self._agency_waiting
         with self._lock:
-            agency = self._agencies_waiting[client_sock]
             bets = load_bets()
         winners = []
         for bet in bets:
@@ -112,10 +112,9 @@ class Server:
 
     def __notify_winners(self, dni_winners, socket):
         """Sends to agency N the winners of agency N if it is still connected and asks for them.
-         Each thread will send to the agency it is handling its winners."""
+         Each process will send to the agency it is handling its winners."""
         
-        with self._lock:
-            agency = self._agencies_waiting[socket]
+        agency = self._agency_waiting
         try:
             msg = receive_message(socket)
             logging.info(f'action: receive_message | result: success | agency: {agency} | msg: {msg}')
@@ -126,8 +125,7 @@ class Server:
                     logging.info(f"action: winners_sent | result: success | agency: {agency} | cantidad: {len(dni_winners)}")
                 except OSError as e:
                     logging.error(f"action: send_message | result: fail | error: {e.strerror}")
-            with self._lock:
-                self.__disconnect_client(socket)
+            self.__disconnect_client(socket)
         except OSError as e:
             logging.error(f"action: receive_message | result: fail | error: {e.strerror}")
 
@@ -144,8 +142,7 @@ class Server:
                 logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
                 msg_type = Message.from_string(msg)
                 if msg_type == Message.CLIENT_SHUTDOWN:
-                    with self._lock:
-                        self.__disconnect_client(client_sock)
+                    self.__disconnect_client(client_sock)
                     break
                     
                 if msg_type == Message.BETS_SENT:
@@ -161,10 +158,9 @@ class Server:
         """ Stores bets in the storage file and notifies the client whether the operation was successful or not """
         try:
             bets = Bet.deserialize_bets(msg)
+            if self._agency_waiting is None and len(bets) > 0:
+                self._agency_waiting = bets[0].agency
             with self._lock:
-                if len(bets) > 0 and bets[0].agency not in self._agencies_waiting:
-                    agency = bets[0].agency
-                    self._agencies_waiting[client_sock] = agency
                 store_bets(bets)
             logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
             send_message(client_sock, Message.SUCCESS.to_string())
