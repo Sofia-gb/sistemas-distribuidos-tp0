@@ -171,6 +171,7 @@ func CreateBetsFromCSV(config ClientConfig) []*Bet {
 	return bets
 }
 
+// closeBetsFile closes the file and logs the result
 func closeBetsFile(file *os.File) {
 	err := file.Close()
 	if err != nil {

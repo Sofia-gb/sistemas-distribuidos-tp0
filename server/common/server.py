@@ -13,8 +13,6 @@ class Server:
 
     def run(self):
         """
-        Dummy Server loop
-
         Server that accept a new connections and establishes a
         communication with a client. After client with communucation
         finishes, servers starts to accept new connections again
@@ -60,7 +58,8 @@ class Server:
 
     def __handle_client_connection(self, client_sock):
         """
-        Read message from a specific client socket and closes the socket
+        Receives bets from a client and stores them until the client
+        sends a CLIENT_SHUTDOWN message.
 
         If a problem arises in the communication with the client, the
         client socket will also be closed
