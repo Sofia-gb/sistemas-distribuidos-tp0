@@ -21,8 +21,9 @@ type ClientConfig struct {
 	ServerAddress  string
 	LoopAmount     int
 	LoopPeriod     time.Duration
-	BetsFile       string
+	BetsPath       string
 	BatchMaxAmount int
+	BetsFile       *os.File
 }
 
 // Client Entity that encapsulates how
@@ -35,7 +36,7 @@ type Client struct {
 // NewClient Initializes a new client receiving the configuration
 // as a parameter
 func NewClient(config ClientConfig) *Client {
-	bets := CreateBetsFromCSV(config)
+	bets := CreateBetsFromCSV(&config)
 	client := &Client{
 		config: config,
 		bets:   bets,
@@ -111,6 +112,9 @@ func (c *Client) StartClient() {
 // Close gracefully shuts down the client by closing the socket connection.
 func (c *Client) Close() {
 	log.Infof("action: shutdown | result: in_progress | client_id: %v", c.config.ID)
+
+	closeBetsFile(&c.config)
+
 	log.Infof("action: close_connection | result: in_progress | client_id: %v", c.config.ID)
 	if c.conn != nil {
 		err := SendMessage(c.conn, Message(CLIENT_SHUTDOWN).ToString())
@@ -134,14 +138,15 @@ func (c *Client) Close() {
 }
 
 // CreateBetsFromCSV Lee el archivo CSV y crea una lista de apuestas
-func CreateBetsFromCSV(config ClientConfig) []*Bet {
-	file, err := os.Open(config.BetsFile)
+func CreateBetsFromCSV(config *ClientConfig) []*Bet {
 	var bets []*Bet
+	file, err := os.Open(config.BetsPath)
 	if err != nil {
 		log.Errorf("action: read_csv_file | result: fail | client_id: %v | error: %v", config.ID, err)
 		return bets
 	}
-	defer closeBetsFile(file)
+	config.BetsFile = file
+	defer closeBetsFile(config)
 
 	scanner := bufio.NewScanner(file)
 
@@ -171,12 +176,16 @@ func CreateBetsFromCSV(config ClientConfig) []*Bet {
 	return bets
 }
 
-// closeBetsFile closes the file and logs the result
-func closeBetsFile(file *os.File) {
-	err := file.Close()
-	if err != nil {
-		log.Errorf("action: close_csv | result: fail | error: %v", err)
-	} else {
-		log.Infof("action: close_csv | result: success")
+// closeBetsFile closes the bets file from the client config
+func closeBetsFile(config *ClientConfig) {
+	if config.BetsFile == nil {
+		return
 	}
+	err := config.BetsFile.Close()
+	if err != nil {
+		log.Errorf("action: close_bets_file | result: fail | error: %v", err)
+	} else {
+		log.Infof("action: close_bets_file | result: success")
+	}
+	config.BetsFile = nil
 }
