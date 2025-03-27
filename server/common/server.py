@@ -19,11 +19,10 @@ class Server:
 
     def run(self):
         """
-        Dummy Server loop
-
-        Server that accept a new connections and establishes a
-        communication with a client. After client with communucation
-        finishes, servers starts to accept new connections again
+        Creates a new thread for each client connection. The thread will receive and send messages
+        to the given agency, using a socket. 
+        
+        The main thread will wait for all the threads to finish before closing the server
         """
         agencies = 0
 
@@ -38,12 +37,12 @@ class Server:
             except OSError as e:
                 logging.warning(f"action: accept_connections | result: fail | error: {e.strerror}")
                 break
-            
+
         self.__wait_for_clients_threads()
 
     def close(self):
         """
-        Close server socket, client sockets and 
+        Closes server socket and client sockets, and wait for all threads to finish.
         """
 
         logging.info("action: shutdown | result: in_progress")
@@ -72,6 +71,7 @@ class Server:
         logging.info("action: shutdown | result: success")
 
     def __wait_for_clients_threads(self):
+        """ Waits for all threads to finish. It will remove the threads from the list of threads """
         for thread in self._clients_threads:
             logging.info(f"action: join_thread | result: in_progress | thread: {thread.name}")
             thread.join()
@@ -79,7 +79,7 @@ class Server:
             logging.info(f"action: join_thread | result: success | thread: {thread.name}")
 
     def __get_winners(self, client_sock):
-        """ Get winners from bets """
+        """ Get winners from bets. Each thread will get the winners of the agency it is handling """
         with self._lock:
             agency = self._agencies_waiting[client_sock]
             bets = load_bets()
@@ -92,10 +92,9 @@ class Server:
 
     def __handle_client_connection(self, client_sock):
         """
-        Read message from a specific client socket and closes the socket
+        It receives bets from the client and stores them in a file, notifying the client whether the operation was 
+        successful or not. Then it gets the winners of the agency and notifies the client sending the winners.
 
-        If a problem arises in the communication with the client, the
-        client socket will also be closed
         """
 
         self.__receive_bets(client_sock)
@@ -112,7 +111,9 @@ class Server:
         self.__notify_winners(winners, client_sock)
 
     def __notify_winners(self, dni_winners, socket):
-        """ Sends to agency N the winners of agency N """
+        """Sends to agency N the winners of agency N if it is still connected and asks for them.
+         Each thread will send to the agency it is handling its winners."""
+        
         with self._lock:
             agency = self._agencies_waiting[socket]
         try:
@@ -132,7 +133,7 @@ class Server:
 
     def __receive_bets(self, client_sock):
         """
-        Receive bets from a client until the agency sends a CLIENT_SHUTDOWN message or a BETS_SENT message
+        Receives bets from a client until the agency sends a CLIENT_SHUTDOWN message or a BETS_SENT message
         """
 
         while True:
