@@ -1,3 +1,4 @@
+import signal
 import socket
 import logging
 from common.communication_protocol import *
@@ -41,17 +42,18 @@ class Server:
 
         self.close()
 
-    def close(self):
+    def close(self, wait_for_processes=True):
         """
         Closes server socket and client sockets, and wait for all processes to finish.
         """
 
         logging.info(f"action: shutdown | result: in_progress | process: {self._name}")
-        self.__wait_for_clients_processes()
-        self.__close_client_socket(must_notify=True)
         self.__close_server_socket()
+        self.__close_client_socket(must_notify=True)
+        if wait_for_processes:
+            self.__wait_for_clients_processes()
             
-        logging.info("action: shutdown | result: success")
+        logging.info(f"action: shutdown | result: success | process: {self._name}")
 
     def __wait_for_clients_processes(self):
         """ Waits for all processes to finish. It will remove the process from the list of processes """
@@ -71,6 +73,12 @@ class Server:
             if bet.agency == agency and has_won(bet):
                 winners.append(bet.document)
         return winners
+    
+    def __handle_sigterm(self, signum, frame):
+        """
+        Handle SIGTERM signal. It will close this process sockets.
+        """
+        self.close(wait_for_processes=False)
 
 
     def __handle_client_connection(self, client_sock):
@@ -79,17 +87,22 @@ class Server:
         successful or not. Then it gets the winners of the agency and notifies the client sending the winners.
         """
         self._name = multiprocessing.current_process().name
+        signal.signal(signal.SIGTERM, self.__handle_sigterm)
         self.__close_server_socket()
         self._client_socket = client_sock
+
         self.__receive_bets()
-        if self._client_socket is None: # client disconnected
-            return
+        # If a client is disconnected and the barrier has not ben released, processes 
+        # should not wait. Winner notification will be skipped because not all bets will be received.
+        if self._client_socket is None and self._barrier_bets_received.parties > 0: 
+            self._barrier_bets_received.abort()
 
         try:
             self._barrier_bets_received.wait() 
 
         except RuntimeError as e:
             logging.error(f"action: sorteo | result: fail | error: barrier broken | process: {self._name}")
+            self.__close_client_socket(must_notify=True) # close client socket and notify client that the server is shutting down
             return
 
         logging.info(f"action: sorteo | result: success | process: {self._name}")
