@@ -500,10 +500,11 @@ docker build -f ./client/Dockerfile -t client:latest .
 docker compose -f docker-compose-dev.yaml up -d
 ```
 
-Si bien el GIL impide que los programas multithreading aprovechen al máximo los sistemas multiprocesador en ciertas situaciones, en la documentación se aclara que algunas operaciones bloqueantes o largas, como I/O (por ejemplo, leer los archivos de apuestas, almacenar las apuestas y cargarlas nuevamente), ocurren fuera del GIL. Debido a ello, decidí usar de todos modos threads para que el servidor pueda aceptar conexiones y procesar mensajes en paralelo. Cada vez que un cliente (agencia) intenta conectarse con el servidor, se crea un nuevo hilo que maneja esa conexión. El `Thread-i` recibe las apuestas de la agencia `i`, obtiene las ganadoras de la misma y le envía los DNIs de los ganadores.
+Decidí usar _multiprocessing_ para que el servidor pueda aceptar conexiones y procesar mensajes en paralelo. Cada vez que un cliente (agencia) intenta conectarse con el servidor, se crea un nuevo proceso que maneja esa conexión. El `Process-i` recibe las apuestas de la agencia `i`, obtiene las ganadoras de la misma y le envía los DNIs de los ganadores.
 
 Nuevos atributos del servidor:
-- `self.agencies_waiting` reemplaza al diccionario agregado en el ejercicio anterior. En este caso, guarda el socket del cliente como clave y el id (número) de la agencia como valor.
--  `self.lock = threading.Lock()` permite controlar el acceso concurrente a los recursos compartidos del servidor, como `self._clients_sockets` y `self._agencies_waiting`, y un correcto uso de la persistencia. El objetivo es evitar que múltiples hilos intenten acceder a estos recursos al mismo tiempo y resulten en datos inconsistentes.
-- `self.clients_threads` guarda referencias a los hilos (threads) activos con el objetivo de poder hacerles `join()`.
+- `self._agency_waiting` reemplaza al diccionario agregado en el ejercicio anterior. Guarda el id (número) de la agencia que maneja el proceso dado. No necesita ser un recurso compartido porque cada proceso conoce únicamente la agencia de la cual es responsable. 
+-  `self.lock = threading.Lock()` permite controlar el acceso concurrente a los recursos compartidos del servidor, como el archivo de apuestas. El objetivo es evitar que múltiples procesos intenten acceder a estos recursos al mismo tiempo y resulten en datos inconsistentes.
+- `self._clients_processes` guarda referencias a los procesos activos con el objetivo de poder hacerles `join()`. Solo el proceso principal que los creó accede a esta lista, por lo cual no necesita ser un recurso compartido (lo mismo ocurre con _clients_sockets).
  - `self.barrier_bets_received = threading.Barrier(total_agencies)` es una barrera que asegura que todas las agencias hayan finalizado de enviar sus apuestas para poder proceder con el sorteo.
+
