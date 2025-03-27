@@ -60,8 +60,8 @@ class Server:
 
     def __handle_client_connection(self, client_sock):
         """
-        Read message from a specific client socket and closes the socket
-
+        Read message from a specific client socket and closes the socket. If the message 
+        is a valid bet, it is stored in the database. 
         If a problem arises in the communication with the client, the
         client socket will also be closed
         """
