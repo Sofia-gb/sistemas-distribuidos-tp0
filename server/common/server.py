@@ -15,11 +15,9 @@ class Server:
 
     def run(self):
         """
-        Dummy Server loop
-
         Server that accept a new connections and establishes a
         communication with a client. After client with communucation
-        finishes, servers starts to accept new connections again
+        finishes, servers starts to accept new connections again.
         """
 
         while True:
@@ -74,10 +72,9 @@ class Server:
 
     def __handle_client_connection(self, client_sock):
         """
-        Read message from a specific client socket and closes the socket
-
-        If a problem arises in the communication with the client, the
-        client socket will also be closed
+        Receives bets from a client and stores them in a file until the agency sends a
+        BETS_SENT message. When all agencies have sent their bets, the winners are
+        calculated and sent to the agencies. 
         """
 
         self.__receive_bets(client_sock)
