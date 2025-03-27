@@ -506,5 +506,11 @@ Nuevos atributos del servidor:
 - `self._agency_waiting` reemplaza al diccionario agregado en el ejercicio anterior. Guarda el id (número) de la agencia que maneja el proceso dado. No necesita ser un recurso compartido porque cada proceso conoce únicamente la agencia de la cual es responsable. 
 -  `self.lock = threading.Lock()` permite controlar el acceso concurrente a los recursos compartidos del servidor, como el archivo de apuestas. El objetivo es evitar que múltiples procesos intenten acceder a estos recursos al mismo tiempo y resulten en datos inconsistentes.
 - `self._clients_processes` guarda referencias a los procesos activos con el objetivo de poder hacerles `join()`. Solo el proceso principal que los creó accede a esta lista, por lo cual no necesita ser un recurso compartido (lo mismo ocurre con _clients_sockets).
- - `self.barrier_bets_received = threading.Barrier(total_agencies)` es una barrera que asegura que todas las agencias hayan finalizado de enviar sus apuestas para poder proceder con el sorteo.
+ - `self.barrier_bets_received = threading.Barrier(total_agencies)` es una barrera que asegura que todas las agencias hayan finalizado de enviar sus apuestas para poder proceder con el sorteo. Si algún cliente se desconecta, se aborta la barrera y no se realizará el sorteo.
+ - `self._client_socket` reemplaza al atributo `_clients_sockets` de los ejercicios anteriores. Cada proceso hijo se guarda únicamente un socket para comunicarse con la agencia que tiene a cargo. Como las conexiones son aceptadas desde el proceso principal, este cierra su copia del socket.
+ - `self._name` es utilizado para indicar en los logs cuál es el proceso encargado de tal acción.
 
+Los procesos hijos son creados con una copia de los datos del proceso principal, por lo que, antes de recibir las apuestas, realizan las siguientes acciones:
+- Cambiar el nombre (`self._name`) del padre por el suyo.
+- Cerrar su copia del socket del servidor (`self._server_socket`).
+- Asignar correctamente `self._client_socket`.

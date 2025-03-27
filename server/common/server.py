@@ -208,7 +208,7 @@ class Server:
             # Ignore the exception and do nothing (logging the error is not compatible with the tests)
             pass
         finally:
-            self._client_sock = None
+            self._client_socket = None
 
     def __close_server_socket(self):
         """
