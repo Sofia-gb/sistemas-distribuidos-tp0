@@ -126,7 +126,7 @@ func main() {
 		ID:             v.GetString("id"),
 		LoopAmount:     v.GetInt("loop.amount"),
 		LoopPeriod:     v.GetDuration("loop.period"),
-		BetsFile:       v.GetString("BETS_FILE"),
+		BetsPath:       v.GetString("BETS_FILE"),
 		BatchMaxAmount: v.GetInt("batch.maxAmount"),
 	}
 
